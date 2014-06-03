@@ -135,5 +135,4 @@ public interface Component {
   public static float SLIDER_MIN_VALUE = 10;
   public static float SLIDER_MAX_VALUE = 50;
   public static float SLIDER_THUMB_VALUE = (SLIDER_MIN_VALUE + SLIDER_MAX_VALUE) / 2.0f;
-
 }

@@ -5,8 +5,6 @@
 
 package com.google.appinventor.components.runtime;
 
-import android.util.Log;
-
 import com.google.appinventor.components.annotations.SimpleObject;
 
 /**
@@ -15,7 +13,7 @@ import com.google.appinventor.components.annotations.SimpleObject;
  * @author lizlooney@google.com (Liz Looney)
  */
 @SimpleObject
-public abstract class AndroidNonvisibleComponent implements Component {
+public abstract class AndroidNonvisibleCallbackComponent implements Component {
 
   protected final Form form;
 
@@ -24,7 +22,7 @@ public abstract class AndroidNonvisibleComponent implements Component {
    *
    * @param form the container that this component will be placed in
    */
-  protected AndroidNonvisibleComponent(Form form) {
+  protected AndroidNonvisibleCallbackComponent(Form form) {
     this.form = form;
   }
 
@@ -34,9 +32,9 @@ public abstract class AndroidNonvisibleComponent implements Component {
   public HandlesEventDispatching getDispatchDelegate() {
     return form;
   }
-  
-  public void digitalRead2(int i) {
 
-	  }
-  
+  public void digitalRead1() {
+	// TODO Auto-generated method stub
+	
+  }
 }

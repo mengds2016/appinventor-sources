@@ -21,12 +21,12 @@ public enum ComponentCategory {
   SOCIAL("Social"),
   STORAGE("Storage"),
   CONNECTIVITY("Connectivity"),
+  HIPPOADK("HippoADK"),
   LEGOMINDSTORMS("LEGO\u00AE MINDSTORMS\u00AE"),
   //EXPERIMENTAL("Experimental"),
   INTERNAL("For internal use only"),
   // UNINITIALIZED is used as a default value so Swing libraries can still compile
   UNINITIALIZED("Uninitialized");
-
   // Mapping of component categories to names consisting only of lower-case letters,
   // suitable for appearing in URLs.
   private static final Map<String, String> DOC_MAP =
@@ -40,6 +40,7 @@ public enum ComponentCategory {
     DOC_MAP.put("Social", "social");
     DOC_MAP.put("Storage", "storage");
     DOC_MAP.put("Connectivity", "connectivity");
+    DOC_MAP.put("HippoADK", "hippoadk");
     DOC_MAP.put("LEGO\u00AE MINDSTORMS\u00AE", "legomindstorms");
     //DOC_MAP.put("Experimental", "experimental");
   }

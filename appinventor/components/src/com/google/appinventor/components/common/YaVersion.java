@@ -321,7 +321,13 @@ public class YaVersion {
   //For ACCELEROMETERSENSOR_COMPONENT_VERSION 3:
   // - AccelerometerSensor.Sensitivty property was added.
   public static final int ACCELEROMETERSENSOR_COMPONENT_VERSION = 3;
-
+  
+  //GYROSCOPE
+  public static final int GYROSCOPESENSOR_COMPONENT_VERSION = 1;
+  
+  //PROXIMITY
+  public static final int PROXIMITYSENSOR_COMPONENT_VERSION = 1;
+  
   // For ACTIVITYSTARTER_COMPONENT_VERSION 2:
   // - The ActivityStarter.DataType, ActivityStarter.ResultType, and ActivityStarter.ResultUri
   //   properties were added.

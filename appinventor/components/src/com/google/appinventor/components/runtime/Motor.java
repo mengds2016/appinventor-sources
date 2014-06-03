@@ -62,11 +62,11 @@ import java.util.Queue;
     "     0 when perpindicular to the ground, and +9.8 when facing down.  " +
     "     The value can also be affected by accelerating it with or against " +
     "     gravity. </li></ul>",
-    category = ComponentCategory.SENSORS,
+    category = ComponentCategory.HIPPOADK,
     nonVisible = true,
-    iconName = "images/accelerometersensor.png")
+    iconName = "images/hippoadk.png")
 @SimpleObject
-public class AccelerometerSensor extends AndroidNonvisibleComponent
+public class Motor extends AndroidNonvisibleComponent
     implements OnStopListener, OnResumeListener, SensorComponent, SensorEventListener, Deleteable {
 
   // Shake thresholds - derived by trial
@@ -108,7 +108,7 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
    *
    * @param container  ignored (because this is a non-visible component)
    */
-  public AccelerometerSensor(ComponentContainer container) {
+  public Motor(ComponentContainer container) {
     super(container.$form());
     form.registerForOnResume(this);
     form.registerForOnStop(this);

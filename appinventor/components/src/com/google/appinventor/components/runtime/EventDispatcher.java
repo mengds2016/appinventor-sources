@@ -188,6 +188,7 @@ public class EventDispatcher {
     if (DEBUG) {
       Log.i("EventDispatcher", "Trying to dispatch event " + eventName);
     }
+    Log.d("EventDispatcher", "Trying to dispatch event " + eventName);
     boolean dispatched = false;
     HandlesEventDispatching dispatchDelegate = component.getDispatchDelegate();
     if (dispatchDelegate.canDispatchEvent(component, eventName)) {

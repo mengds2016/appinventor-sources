@@ -161,6 +161,11 @@ public class YoungAndroidPalettePanel extends Composite implements SimplePalette
           // Pass the set of component types that will be shown in the property editor,
           // in this case, just "BluetoothClient".
           Collections.singleton("BluetoothClient"));
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_UsbAccessory)) {
+        return new YoungAndroidComponentSelectorPropertyEditor(editor,
+                // Pass the set of component types that will be shown in the property editor,
+                // in this case, just "BluetoothClient".
+                Collections.singleton("UsbAccessory"));
     } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN)) {
       return new YoungAndroidBooleanPropertyEditor();
     } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_BUTTON_SHAPE)) {

@@ -45,9 +45,9 @@ import java.util.Queue;
  *
  */
 // TODO(user): ideas - event for knocking
-@DesignerComponent(version = YaVersion.ACCELEROMETERSENSOR_COMPONENT_VERSION,
+@DesignerComponent(version = YaVersion.GYROSCOPESENSOR_COMPONENT_VERSION,
     description = "Non-visible component that can detect shaking and " +
-    "measure acceleration approximately in three dimensions using SI units " +
+    "measure GYROSCOPE approximately in three dimensions using SI units " +
     "(m/s<sup>2</sup>).  The components are: <ul>\n" +
     "<li> <strong>xAccel</strong>: 0 when the phone is at rest on a flat " +
     "     surface, positive when the phone is tilted to the right (i.e., " +
@@ -66,7 +66,7 @@ import java.util.Queue;
     nonVisible = true,
     iconName = "images/accelerometersensor.png")
 @SimpleObject
-public class AccelerometerSensor extends AndroidNonvisibleComponent
+public class GyroscopeSensor extends AndroidNonvisibleComponent
     implements OnStopListener, OnResumeListener, SensorComponent, SensorEventListener, Deleteable {
 
   // Shake thresholds - derived by trial
@@ -88,6 +88,8 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
   private int accuracy;
 
   private int sensitivity;
+  
+  private int mtest;
 
   // Sensor manager
   private final SensorManager sensorManager;
@@ -101,21 +103,21 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
   //Specifies the time when Shaking() was last called
   private long timeLastShook;
 
-  private Sensor accelerometerSensor;
+  private Sensor gyroscopeSensor;
 
   /**
    * Creates a new AccelerometerSensor component.
    *
    * @param container  ignored (because this is a non-visible component)
    */
-  public AccelerometerSensor(ComponentContainer container) {
+  public GyroscopeSensor(ComponentContainer container) {
     super(container.$form());
     form.registerForOnResume(this);
     form.registerForOnStop(this);
 
     enabled = true;
     sensorManager = (SensorManager) container.$context().getSystemService(Context.SENSOR_SERVICE);
-    accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+    gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
     startListening();
     MinimumInterval(10);
     Sensitivity(Component.ACCELEROMETER_SENSITIVITY_MODERATE);
@@ -136,6 +138,13 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
     return minimumInterval;
   }
 
+  @SimpleProperty(
+	      category = PropertyCategory.BEHAVIOR,
+	      description = "The minimum interval between phone shakes")
+	  public int Test() {
+	    return mtest;
+	  }
+  
   /**
    * Specifies the minimum interval required between calls to Shaking(),
    * in milliseconds.
@@ -150,6 +159,13 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
     minimumInterval = interval;
   }
 
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_NON_NEGATIVE_INTEGER,
+	      defaultValue = "800") //Default value derived by trial of 12 people on 3 different devices
+	  @SimpleProperty
+	  public void Test(int test) {
+	    mtest = test;
+	  }
+  
   /**
    * Returns a number that encodes how sensitive the AccelerometerSensor is.
    * The choices are: 1 = weak, 2 = moderate, 3 = strong.
@@ -192,7 +208,7 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
    * Indicates the acceleration changed in the X, Y, and/or Z dimensions.
    */
   @SimpleEvent
-  public void AccelerationChanged(float xAccel, float yAccel, float zAccel) {
+  public void GyroscopeChanged(float xAccel, float yAccel, float zAccel) {
     this.xAccel = xAccel;
     this.yAccel = yAccel;
     this.zAccel = zAccel;
@@ -208,18 +224,25 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
     if ((isShaking(X_CACHE, xAccel) || isShaking(Y_CACHE, yAccel) || isShaking(Z_CACHE, zAccel))
         && (timeLastShook == 0 || currentTime >= timeLastShook + minimumInterval)){
       timeLastShook = currentTime;
-      Shaking();
+      Shaking1();
     }
 
-    EventDispatcher.dispatchEvent(this, "AccelerationChanged", xAccel, yAccel, zAccel);
+    EventDispatcher.dispatchEvent(this, "GyroscopeChanged", xAccel, yAccel, zAccel);
+  }
+  
+  @SimpleEvent
+  public void GyroscopeChanged1(float x, float y, float z) {
+
+	float i = x;
+    EventDispatcher.dispatchEvent(this, "GyroscopeChanged1", x, y, z);
   }
 
   /**
    * Indicates the device started being shaken or continues to be shaken.
    */
   @SimpleEvent
-  public void Shaking() {
-    EventDispatcher.dispatchEvent(this, "Shaking");
+  public void Shaking1() {
+    EventDispatcher.dispatchEvent(this, "Shaking1");
   }
 
   /**
@@ -231,7 +254,7 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
   @SimpleProperty(
       category = PropertyCategory.BEHAVIOR)
   public boolean Available() {
-    List<Sensor> sensors = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
+    List<Sensor> sensors = sensorManager.getSensorList(Sensor.TYPE_GYROSCOPE);
     return (sensors.size() > 0);
   }
 
@@ -250,8 +273,8 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
 
   // Assumes that sensorManager has been initialized, which happens in constructor
   private void startListening() {
-    //sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
-    sensorManager.registerListener(this, accelerometerSensor, 20000);
+    //sensorManager.registerListener(this, gyroscopeSensor, SensorManager.SENSOR_DELAY_GAME);
+	sensorManager.registerListener(this, gyroscopeSensor, 10000);
   }
 
   // Assumes that sensorManager has been initialized, which happens in constructor
@@ -361,7 +384,7 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
       yAccel = values[1];
       zAccel = values[2];
       accuracy = sensorEvent.accuracy;
-      AccelerationChanged(xAccel, yAccel, zAccel);
+      GyroscopeChanged(xAccel, yAccel, zAccel);
     }
   }
 
