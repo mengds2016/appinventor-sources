@@ -71,6 +71,7 @@ public class DigitalRead extends AndroidNonvisibleComponent  {
   
   protected UsbAccessory usbaccessory;
   private String TAG = "DigitalRead";
+  private String Pin = "";
   
   /**
    * Creates a new AccelerometerSensor component.
@@ -83,6 +84,26 @@ public class DigitalRead extends AndroidNonvisibleComponent  {
     //form.registerForOnStop(this);
   }
 
+  /**
+
+   */
+  @SimpleProperty(
+      category = PropertyCategory.BEHAVIOR,
+      description = "The Pin used")
+  public String Pin() {
+    return Pin;
+  }
+  
+  /**
+   * Specifies the motor ports that are used for driving.
+   */
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_STRING,
+      defaultValue = "")
+  @SimpleProperty
+  public void Pin(String pin) {
+    Pin = pin;
+  }
+  
   /**
    * Indicates the acceleration changed in the X, Y, and/or Z dimensions.
    */
@@ -98,6 +119,10 @@ public class DigitalRead extends AndroidNonvisibleComponent  {
 		Log.d(TAG,"digitalRead1");
 		digitalRead1(i);
 	  }
+
+  public String GetPin() {
+	  return Pin;
+  }
   
   /**
    * Specifies the BluetoothClient component that should be used for communication.

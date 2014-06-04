@@ -18,7 +18,7 @@ import com.google.appinventor.components.annotations.SimpleObject;
 public abstract class AndroidNonvisibleComponent implements Component {
 
   protected final Form form;
-
+  protected final String Pin = "";
   /**
    * Creates a new AndroidNonvisibleComponent.
    *
@@ -38,5 +38,7 @@ public abstract class AndroidNonvisibleComponent implements Component {
   public void digitalRead2(int i) {
 
 	  }
-  
+  public String GetPin() {
+	  return Pin;
+  }
 }

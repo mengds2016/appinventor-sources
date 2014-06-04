@@ -90,8 +90,11 @@ implements OnStopListener, OnResumeListener {
 						accessoryManager.read(commandPacket);
 						if(commandPacket[0] == 0x00){
 							//attachedComponents.get(0).digitalRead1((int)(commandPacket[5]));
-							attachedComponents1.get(0).digitalRead2((int)(commandPacket[5]));
-							Log.d(TAG,"attachedComponents.get(0).digitalRead1()");
+							if(!(attachedComponents1.get(0)==null)){
+								attachedComponents1.get(0).digitalRead2((int)(commandPacket[5]));
+								String Temp = attachedComponents1.get(0).GetPin();
+								Log.d(TAG,"attachedComponents.get(0).digitalRead1()");
+							}
 						}
 					}
 				break;
@@ -148,106 +151,6 @@ implements OnStopListener, OnResumeListener {
       acceptableDeviceClasses = null;
     }
   }
-
-  @SimpleProperty(
-	      category = PropertyCategory.BEHAVIOR,
-	      description = "The minimum interval between phone shakes")
-	  public int Test() {
-	    return mtest;
-	  }
-  
-  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_NON_NEGATIVE_INTEGER,
-	      defaultValue = "800") //Default value derived by trial of 12 people on 3 different devices
-	  @SimpleProperty
-	  public void Test(int test) {
-	    mtest = test;
-	    byte[] USBCommandPacket = new byte[13];
-		USBCommandPacket[0] = 0x05;//控制方式1：PWM直接控制
-		USBCommandPacket[4] = 0x08;
-		USBCommandPacket[5] = 0x00;
-		USBCommandPacket[6] = 0x00;
-		USBCommandPacket[7] = 0x03;
-		USBCommandPacket[8] = 0x00;
-		USBCommandPacket[9] = 0x00;
-		USBCommandPacket[10] = 0x00;
-		USBCommandPacket[11] = 0x00;
-		USBCommandPacket[12] = (byte)0xFF;
-	    accessoryManager.write(USBCommandPacket);
-	    USBCommandPacket[11] = (byte)((int)USBCommandPacket[11] + 1);
-	    if((int)USBCommandPacket[11]==20){
-	    	USBCommandPacket[11] = 0x00;
-	    }
-	  }
-  
-  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_NON_NEGATIVE_INTEGER,
-	      defaultValue = "800") //Default value derived by trial of 12 people on 3 different devices
-	  @SimpleProperty
-	  public void Shoot(int test) {
-	    mtest = test;
-	    byte[] USBCommandPacketShoot = new byte[13];
-		int speed = 200;
-		for (int i = 5; i < 9; i++) {
-			USBCommandPacketShoot[i] = (byte) (speed >>> (24 - (i-5) * 8));
-		}
-		//for (int i = 9; i < 13; i++) {
-		//	USBCommandPacketShoot[i] = (byte) (right >>> (24 - (i-9)  * 8));
-		//}				
-		USBCommandPacketShoot[0] = 0x01;
-		USBCommandPacketShoot[4] = 0x08;
-		accessoryManager.write(USBCommandPacketShoot);
-	  }
-  
-  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_NON_NEGATIVE_INTEGER,
-	      defaultValue = "800") //Default value derived by trial of 12 people on 3 different devices
-	  @SimpleProperty
-	  public void StopShoot(int test) {
-	    mtest = test;
-	    byte[] USBCommandPacketShoot = new byte[13];
-		int speed = 50;
-		for (int i = 5; i < 9; i++) {
-			USBCommandPacketShoot[i] = (byte) (speed >>> (24 - (i-5) * 8));
-		}
-		//for (int i = 9; i < 13; i++) {
-		//	USBCommandPacketShoot[i] = (byte) (right >>> (24 - (i-9)  * 8));
-		//}				
-		USBCommandPacketShoot[0] = 0x01;
-		USBCommandPacketShoot[4] = 0x08;
-		accessoryManager.write(USBCommandPacketShoot);
-	  }
-
-  /**
-   * Decodes the given number String to an integer and writes it as two bytes
-   * to the output stream.
-   *
-   * If the number could not be decoded to an integer, or the integer would not
-   * fit in two bytes, then the Form's ErrorOccurred event is triggered and this
-   * method returns without writing any bytes to the output stream.
-   *
-   * @param number the number to write
-   */
-  @SimpleFunction(description = "Send CMD to the HippoADK.")
-  public void Send2ByteNumber(String number) {
-    String functionName = "Send2ByteNumber";
-    byte[] USBCommandPacketShoot = new byte[13];
-	int speed = 50;
-	//for (int i = 5; i < 9; i++) {
-	//	USBCommandPacketShoot[i] = (byte) (speed >>> (24 - (i-5) * 8));
-	//}
-	//for (int i = 9; i < 13; i++) {
-	//	USBCommandPacketShoot[i] = (byte) (right >>> (24 - (i-9)  * 8));
-	//}				
-	USBCommandPacketShoot[0] = 0x00;
-	USBCommandPacketShoot[4] = 0x08;
-	if(Flag == 0){
-		USBCommandPacketShoot[5] = 0x00;
-		Flag = 1;
-	}else{
-		USBCommandPacketShoot[5] = 0x01;
-		Flag = 0;
-	}
-    accessoryManager.write(USBCommandPacketShoot);
-
-  }
   
   /**
    * Specifies the text displayed by the label.
@@ -273,29 +176,9 @@ implements OnStopListener, OnResumeListener {
 	    accessoryManager.write(USBCommandPacketShoot);
   }
   
-  protected final  void SendCMD1(String cmd) {
-	    //TextViewUtil.setText(view, text);
-	  Log.d(TAG,"SendCMD" + cmd);
-	    byte[] USBCommandPacketShoot = new byte[13];
-		int speed = 50;
-		//for (int i = 5; i < 9; i++) {
-		//	USBCommandPacketShoot[i] = (byte) (speed >>> (24 - (i-5) * 8));
-		//}
-		//for (int i = 9; i < 13; i++) {
-		//	USBCommandPacketShoot[i] = (byte) (right >>> (24 - (i-9)  * 8));
-		//}				
-		USBCommandPacketShoot[0] = 0x00;
-		USBCommandPacketShoot[4] = 0x08;
-		if(Flag == 0){
-			USBCommandPacketShoot[5] = 0x00;
-			Flag = 1;
-		}else{
-			USBCommandPacketShoot[5] = 0x01;
-			Flag = 0;
-		}
-	    accessoryManager.write(USBCommandPacketShoot);
-	    
-	  }
+  protected final void SendCommand(byte[] cmd) {
+	    accessoryManager.write(cmd);    
+  } 
   
   @Override
   public void onResume() {

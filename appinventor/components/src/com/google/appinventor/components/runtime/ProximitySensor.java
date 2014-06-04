@@ -80,12 +80,6 @@ public class ProximitySensor extends AndroidNonvisibleComponent
   // Indicates whether the accelerometer should generate events
   private boolean enabled;
 
-  //Specifies the minimum time interval between calls to Shaking()
-  private int minimumInterval;
-
-  //Specifies the time when Shaking() was last called
-  private long timeLastShook;
-
   private Sensor proximitySensor;
   
   private String TAG = "ProximitySensor";
@@ -105,15 +99,13 @@ public class ProximitySensor extends AndroidNonvisibleComponent
     sensorManager = (SensorManager) container.$context().getSystemService(Context.SENSOR_SERVICE);
     proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
     startListening();
-    //MinimumInterval(10);
-    //Sensitivity(Component.ACCELEROMETER_SENSITIVITY_MODERATE);
   }
 
   /**
    * Returns the BluetoothClient component that should be used for communication.
    */
   @SimpleProperty(
-      description = "The BluetoothClient component that should be used for communication.",
+      description = "The USBaccessory component that should be used for communication.",
       category = PropertyCategory.BEHAVIOR, userVisible = false)
   public UsbAccessory UsbAccessory() {
     return usbaccessory;
@@ -126,8 +118,6 @@ public class ProximitySensor extends AndroidNonvisibleComponent
       defaultValue = "")
   @SimpleProperty(userVisible = false)
   public void UsbAccessory(UsbAccessory usbaccessory1) {
-
-
     if (usbaccessory1 != null) {
     	usbaccessory = usbaccessory1;
       //bluetooth.attachComponent(this, Collections.singleton(TOY_ROBOT));
@@ -141,7 +131,6 @@ public class ProximitySensor extends AndroidNonvisibleComponent
   @SimpleEvent
   public void ProximityChanged(float distance) {
     this.distance = distance;
-    usbaccessory.SendCMD1("SS");
     EventDispatcher.dispatchEvent(this, "ProximityChanged", distance);
   }
 
@@ -173,8 +162,7 @@ public class ProximitySensor extends AndroidNonvisibleComponent
 
   // Assumes that sensorManager has been initialized, which happens in constructor
   private void startListening() {
-    //sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
-    sensorManager.registerListener(this, proximitySensor, SensorManager.SENSOR_DELAY_FASTEST);
+    sensorManager.registerListener(this, proximitySensor, SensorManager.SENSOR_DELAY_UI);
   }
 
   // Assumes that sensorManager has been initialized, which happens in constructor
@@ -223,7 +211,6 @@ public class ProximitySensor extends AndroidNonvisibleComponent
     if (enabled) {
       final float[] values = sensorEvent.values;
       distance = values[0];
-      Log.d(TAG,"distance:" + distance);
       ProximityChanged(distance);
     }
   }
