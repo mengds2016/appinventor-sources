@@ -126,6 +126,11 @@ public class Variant{
 	public static String A2 = "A2";
 	public static String A1 = "A1";
 	public static String A0 = "A0";
+	public static String RED = "RED";
+	public static String GREEN = "GREEN";
+	public static String A = "A";
+	public static String B = "B";
+	public static String C = "C";
 	
 	public Variant(){
 		//init(hippoADKLooper);
@@ -206,6 +211,16 @@ public class Variant{
 			i = 39;
 		}else if(pin.equals(A0)){
 			i = 40;
+		}else if(pin.equals(RED)){
+			i = 41;
+		}else if(pin.equals(GREEN)){
+			i = 42;
+		}else if(pin.equals(A)){
+			i = 1;
+		}else if(pin.equals(B)){
+			i = 2;
+		}else if(pin.equals(C)){
+			i = 3;
 		}else{
 			i = 0;
 		}

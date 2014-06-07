@@ -88,12 +88,30 @@ implements OnStopListener, OnResumeListener {
 							break;
 						}
 						accessoryManager.read(commandPacket);
-						if(commandPacket[0] == 0x00){
+						if(commandPacket[0] == 40){
 							//attachedComponents.get(0).digitalRead1((int)(commandPacket[5]));
-							if(!(attachedComponents1.get(0)==null)){
-								attachedComponents1.get(0).digitalRead2((int)(commandPacket[5]));
-								String Temp = attachedComponents1.get(0).GetPin();
-								Log.d(TAG,"attachedComponents.get(0).digitalRead1()");
+							for(int i = 0;i < attachedComponents1.size();i++){
+								if(!(attachedComponents1.get(i)==null)){
+									String Temp = attachedComponents1.get(i).GetPin();
+									int temp = Variant.Remap(Temp);
+									if(temp == commandPacket[0]){
+										attachedComponents1.get(i).digitalRead2((int)(commandPacket[5]));
+										Log.d(TAG,"attachedComponents.get(0).digitalRead1()");
+									}
+								}
+							}
+						}
+						if(commandPacket[0] == 12){
+							//attachedComponents.get(0).digitalRead1((int)(commandPacket[5]));
+							for(int i = 0;i < attachedComponents1.size();i++){
+								if(!(attachedComponents1.get(i)==null)){
+									String Temp = attachedComponents1.get(i).GetPin();
+									int temp = Variant.Remap(Temp);
+									if(temp == commandPacket[0]){
+										attachedComponents1.get(i).digitalRead2((int)(commandPacket[5]));
+										Log.d(TAG,"attachedComponents.get(0).digitalRead1()");
+									}
+								}
 							}
 						}
 					}

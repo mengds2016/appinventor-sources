@@ -10,6 +10,7 @@ import com.google.appinventor.components.annotations.DesignerComponent;
 import com.google.appinventor.components.annotations.DesignerProperty;
 import com.google.appinventor.components.annotations.PropertyCategory;
 import com.google.appinventor.components.annotations.SimpleEvent;
+import com.google.appinventor.components.annotations.SimpleFunction;
 import com.google.appinventor.components.annotations.SimpleObject;
 import com.google.appinventor.components.annotations.SimpleProperty;
 import com.google.appinventor.components.common.ComponentCategory;
@@ -17,12 +18,10 @@ import com.google.appinventor.components.common.PropertyTypeConstants;
 import com.google.appinventor.components.common.YaVersion;
 import com.google.appinventor.components.runtime.util.ErrorMessages;
 
-import android.content.Context;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
+import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -66,334 +65,122 @@ import java.util.Queue;
     nonVisible = true,
     iconName = "images/hippoadk.png")
 @SimpleObject
-public class RGBLED extends AndroidNonvisibleComponent
-    implements OnStopListener, OnResumeListener, SensorComponent, SensorEventListener, Deleteable {
-
-  // Shake thresholds - derived by trial
-  private static final double weakShakeThreshold = 5.0;
-  private static final double moderateShakeThreshold = 13.0;
-  private static final double strongShakeThreshold = 20.0;
-
-  // Cache for shake detection
-  private static final int SENSOR_CACHE_SIZE = 10;
-  private final Queue<Float> X_CACHE = new LinkedList<Float>();
-  private final Queue<Float> Y_CACHE = new LinkedList<Float>();
-  private final Queue<Float> Z_CACHE = new LinkedList<Float>();
-
-  // Backing for sensor values
-  private float xAccel;
-  private float yAccel;
-  private float zAccel;
-
-  private int accuracy;
-
-  private int sensitivity;
-
-  // Sensor manager
-  private final SensorManager sensorManager;
-
-  // Indicates whether the accelerometer should generate events
-  private boolean enabled;
-
-  //Specifies the minimum time interval between calls to Shaking()
-  private int minimumInterval;
-
-  //Specifies the time when Shaking() was last called
-  private long timeLastShook;
-
-  private Sensor accelerometerSensor;
-
+public class RGBLED extends AndroidNonvisibleComponent  {
+  private static final int TOY_ROBOT = 0x0804; // from android.bluetooth.BluetoothClass.Device.
+  
+  protected UsbAccessory usbaccessory;
+  private String TAG = "AnalogWrite";
+  private String GreenPin = "";
+  private String BluePin = "";
+  private String RedPin = "";
+  private int Flag = 0;
+  
   /**
    * Creates a new AccelerometerSensor component.
    *
    * @param container  ignored (because this is a non-visible component)
    */
-  public RGBLED(ComponentContainer container) {
+  public RGBLED(ComponentContainer container){
     super(container.$form());
-    form.registerForOnResume(this);
-    form.registerForOnStop(this);
-
-    enabled = true;
-    sensorManager = (SensorManager) container.$context().getSystemService(Context.SENSOR_SERVICE);
-    accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-    startListening();
-    MinimumInterval(10);
-    Sensitivity(Component.ACCELEROMETER_SENSITIVITY_MODERATE);
+    //form.registerForOnResume(this);
+    //form.registerForOnStop(this);
   }
-
-
+  
   /**
-   * Returns the minimum interval required between calls to Shaking(),
-   * in milliseconds.
-   * Once the phone starts being shaken, all further Shaking() calls will be ignored
-   * until the interval has elapsed.
-   * @return  minimum interval in ms
+
    */
-  @SimpleProperty(
-      category = PropertyCategory.BEHAVIOR,
-      description = "The minimum interval between phone shakes")
-  public int MinimumInterval() {
-    return minimumInterval;
+  @SimpleProperty(category = PropertyCategory.BEHAVIOR,description = "The GreenPin used")
+  public String GreenPin() {
+    return GreenPin;
   }
-
+  
   /**
-   * Specifies the minimum interval required between calls to Shaking(),
-   * in milliseconds.
-   * Once the phone starts being shaken, all further Shaking() calls will be ignored
-   * until the interval has elapsed.
-   * @param interval  minimum interval in ms
+
    */
-  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_NON_NEGATIVE_INTEGER,
-      defaultValue = "800") //Default value derived by trial of 12 people on 3 different devices
+  @SimpleProperty(category = PropertyCategory.BEHAVIOR,description = "The BluePin used")
+  public String BluePin() {
+    return BluePin;
+  }
+  /**
+
+   */
+  @SimpleProperty(category = PropertyCategory.BEHAVIOR,description = "The RedPin used")
+  public String RedPin() {
+    return RedPin;
+  }
+  /**
+   * Specifies the motor ports that are used for driving.
+   */
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_STRING,
+      defaultValue = "")
   @SimpleProperty
-  public void MinimumInterval(int interval) {
-    minimumInterval = interval;
+  public void GreenPin(String greenpin) {
+    GreenPin = greenpin;
   }
-
+ 
   /**
-   * Returns a number that encodes how sensitive the AccelerometerSensor is.
-   * The choices are: 1 = weak, 2 = moderate, 3 = strong.
-   *
-   * @return  one of {@link Component#ACCELEROMETER_SENSITIVITY_WEAK},
-   *          {@link Component#ACCELEROMETER_SENSITIVITY_MODERATE} or
-   *          {@link Component#ACCELEROMETER_SENSITIVITY_STRONG}
+   * Specifies the motor ports that are used for driving.
    */
-  @SimpleProperty(
-      category = PropertyCategory.APPEARANCE,
-      description = "A number that encodes how sensitive the accelerometer is. " +
-              "The choices are: 1 = weak, 2 = moderate, " +
-              " 3 = strong.")
-  public int Sensitivity() {
-    return sensitivity;
-  }
-
-  /**
-   * Specifies the sensitivity of the accelerometer
-   * and checks that the argument is a legal value.
-   *
-   * @param sensitivity one of {@link Component#ACCELEROMETER_SENSITIVITY_WEAK},
-   *          {@link Component#ACCELEROMETER_SENSITIVITY_MODERATE} or
-   *          {@link Component#ACCELEROMETER_SENSITIVITY_STRONG}
-   *
-   */
-  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_ACCELEROMETER_SENSITIVITY,
-      defaultValue = Component.ACCELEROMETER_SENSITIVITY_MODERATE + "")
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_STRING,
+      defaultValue = "")
   @SimpleProperty
-  public void Sensitivity(int sensitivity) {
-    if ((sensitivity == 1) || (sensitivity == 2) || (sensitivity == 3)) {
-      this.sensitivity = sensitivity;
-    } else {
-      form.dispatchErrorOccurredEvent(this, "Sensitivity",
-          ErrorMessages.ERROR_BAD_VALUE_FOR_ACCELEROMETER_SENSITIVITY, sensitivity);
-    }
+  public void BluePin(String bluepin) {
+    BluePin = bluepin;
   }
-
+  
   /**
-   * Indicates the acceleration changed in the X, Y, and/or Z dimensions.
+   * Specifies the motor ports that are used for driving.
    */
-  @SimpleEvent
-  public void AccelerationChanged(float xAccel, float yAccel, float zAccel) {
-    this.xAccel = xAccel;
-    this.yAccel = yAccel;
-    this.zAccel = zAccel;
-
-    addToSensorCache(X_CACHE, xAccel);
-    addToSensorCache(Y_CACHE, yAccel);
-    addToSensorCache(Z_CACHE, zAccel);
-
-    long currentTime = System.currentTimeMillis();
-
-    //Checks whether the phone is shaking and the minimum interval
-    //has elapsed since the last registered a shaking event.
-    if ((isShaking(X_CACHE, xAccel) || isShaking(Y_CACHE, yAccel) || isShaking(Z_CACHE, zAccel))
-        && (timeLastShook == 0 || currentTime >= timeLastShook + minimumInterval)){
-      timeLastShook = currentTime;
-      Shaking();
-    }
-
-    EventDispatcher.dispatchEvent(this, "AccelerationChanged", xAccel, yAccel, zAccel);
-  }
-
-  /**
-   * Indicates the device started being shaken or continues to be shaken.
-   */
-  @SimpleEvent
-  public void Shaking() {
-    EventDispatcher.dispatchEvent(this, "Shaking");
-  }
-
-  /**
-   * Available property getter method (read-only property).
-   *
-   * @return {@code true} indicates that an accelerometer sensor is available,
-   *         {@code false} that it isn't
-   */
-  @SimpleProperty(
-      category = PropertyCategory.BEHAVIOR)
-  public boolean Available() {
-    List<Sensor> sensors = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
-    return (sensors.size() > 0);
-  }
-
-  /**
-   * If true, the sensor will generate events.  Otherwise, no events
-   * are generated even if the device is accelerated or shaken.
-   *
-   * @return {@code true} indicates that the sensor generates events,
-   *         {@code false} that it doesn't
-   */
-  @SimpleProperty(
-      category = PropertyCategory.BEHAVIOR)
-  public boolean Enabled() {
-    return enabled;
-  }
-
-  // Assumes that sensorManager has been initialized, which happens in constructor
-  private void startListening() {
-    //sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
-    sensorManager.registerListener(this, accelerometerSensor, 20000);
-  }
-
-  // Assumes that sensorManager has been initialized, which happens in constructor
-  private void stopListening() {
-    sensorManager.unregisterListener(this);
-  }
-
-  /**
-   * Specifies whether the sensor should generate events.  If true,
-   * the sensor will generate events.  Otherwise, no events are
-   * generated even if the device is accelerated or shaken.
-   *
-   * @param enabled  {@code true} enables sensor event generation,
-   *                 {@code false} disables it
-   */
-  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN,
-      defaultValue = "True")
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_STRING,
+      defaultValue = "")
   @SimpleProperty
-  public void Enabled(boolean enabled) {
-    if (this.enabled == enabled) {
-      return;
-    }
-    this.enabled = enabled;
-    if (enabled) {
-      startListening();
-    } else {
-      stopListening();
-    }
+  public void RedPin(String redpin) {
+    RedPin = redpin;
   }
-
+  
+	@SimpleFunction(description = "GreenPinWrite")
+	public void GreenPinWrite(int value) {
+		byte[] USBCommandPacket = new byte[13];
+		USBCommandPacket[0] = 0x06;
+		USBCommandPacket[4] = 0x08;
+		int temp = Variant.Remap(GreenPin);
+		USBCommandPacket[5] = (byte) temp;
+		USBCommandPacket[6] = (byte) value;
+		usbaccessory.SendCommand(USBCommandPacket);
+	}
+  
+	@SimpleFunction(description = "BluePinWrite")
+	public void BluePinWrite(int value) {
+		byte[] USBCommandPacket = new byte[13];
+		USBCommandPacket[0] = 0x06;
+		USBCommandPacket[4] = 0x08;
+		int temp = Variant.Remap(BluePin);
+		USBCommandPacket[5] = (byte) temp;
+		USBCommandPacket[6] = (byte) value;
+		usbaccessory.SendCommand(USBCommandPacket);
+	}
+	
+	@SimpleFunction(description = "RedPinWrite")
+	public void RedPinWrite(int value) {
+		byte[] USBCommandPacket = new byte[13];
+		USBCommandPacket[0] = 0x06;
+		USBCommandPacket[4] = 0x08;
+		int temp = Variant.Remap(RedPin);
+		USBCommandPacket[5] = (byte) temp;
+		USBCommandPacket[6] = (byte) value;
+		usbaccessory.SendCommand(USBCommandPacket);
+	}
   /**
-   * Returns the acceleration in the X-dimension in SI units (m/s^2).
-   * The sensor must be enabled to return meaningful values.
-   *
-   * @return  X acceleration
+   * Specifies the BluetoothClient component that should be used for communication.
    */
-  @SimpleProperty(
-      category = PropertyCategory.BEHAVIOR)
-  public float XAccel() {
-    return xAccel;
-  }
-
-  /**
-   * Returns the acceleration in the Y-dimension in SI units (m/s^2).
-   * The sensor must be enabled to return meaningful values.
-   *
-   * @return  Y acceleration
-   */
-  @SimpleProperty(
-      category = PropertyCategory.BEHAVIOR)
-  public float YAccel() {
-    return yAccel;
-  }
-
-  /**
-   * Returns the acceleration in the Z-dimension in SI units (m/s^2).
-   * The sensor must be enabled to return meaningful values.
-   *
-   * @return  Z acceleration
-   */
-  @SimpleProperty(
-      category = PropertyCategory.BEHAVIOR)
-  public float ZAccel() {
-    return zAccel;
-  }
-
-  /*
-   * Updating sensor cache, replacing oldest values.
-   */
-  private void addToSensorCache(Queue<Float> cache, float value) {
-    if (cache.size() >= SENSOR_CACHE_SIZE) {
-      cache.remove();
-    }
-    cache.add(value);
-  }
-
-  /*
-   * Indicates whether there was a sudden, unusual movement.
-   */
-  // TODO(user): Maybe this can be improved.
-  // See http://www.utdallas.edu/~rxb023100/pubs/Accelerometer_WBSN.pdf.
-  private boolean isShaking(Queue<Float> cache, float currentValue) {
-    float average = 0;
-    for (float value : cache) {
-      average += value;
-    }
-
-    average /= cache.size();
-
-    if (Sensitivity() == 1) { //sensitivity is weak
-      return Math.abs(average - currentValue) > strongShakeThreshold;
-    } else if (Sensitivity() == 2) { //sensitivity is moderate
-      return ((Math.abs(average - currentValue) > moderateShakeThreshold)
-        && (Math.abs(average - currentValue) < strongShakeThreshold));
-    } else { //sensitivity is strong
-      return ((Math.abs(average - currentValue) > weakShakeThreshold)
-        && (Math.abs(average - currentValue) < moderateShakeThreshold));
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_UsbAccessory,
+      defaultValue = "")
+  @SimpleProperty(userVisible = false)
+  public void UsbAccessory(UsbAccessory usbaccessory1) {
+    if (usbaccessory1 != null) {
+    	usbaccessory = usbaccessory1;
+    	//usbaccessory.attachComponent(this, Collections.singleton(TOY_ROBOT));
     }
   }
-
-  // SensorListener implementation
-  @Override
-  public void onSensorChanged(SensorEvent sensorEvent) {
-    if (enabled) {
-      final float[] values = sensorEvent.values;
-      xAccel = values[0];
-      yAccel = values[1];
-      zAccel = values[2];
-      accuracy = sensorEvent.accuracy;
-      AccelerationChanged(xAccel, yAccel, zAccel);
-    }
-  }
-
-  @Override
-  public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    // TODO(markf): Figure out if we actually need to do something here.
-  }
-
-  // OnResumeListener implementation
-
-  @Override
-  public void onResume() {
-    if (enabled) {
-      startListening();
-    }
-  }
-
-  // OnStopListener implementation
-
-  @Override
-  public void onStop() {
-    if (enabled) {
-      stopListening();
-    }
-  }
-
-  // Deleteable implementation
-
-  @Override
-  public void onDelete() {
-    if (enabled) {
-      stopListening();
-    }
-  }
+  
 }
