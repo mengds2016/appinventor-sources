@@ -251,7 +251,7 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
   // Assumes that sensorManager has been initialized, which happens in constructor
   private void startListening() {
     //sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
-    sensorManager.registerListener(this, accelerometerSensor, 20000);
+    sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
   }
 
   // Assumes that sensorManager has been initialized, which happens in constructor

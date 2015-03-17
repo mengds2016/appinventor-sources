@@ -100,7 +100,7 @@ public class Variant{
 	public static String C12 = "C12";
 	public static String D2 = "D2";
 	public static String B5 = "B5";
-	public static String B6 = "B7";
+	public static String B6 = "B6";
 	public static String B7 = "B7";
 	public static String B8 = "B8";
 	public static String B9 = "B9";
@@ -108,7 +108,7 @@ public class Variant{
 	public static String C1 = "C1";
 	public static String C2 = "C2";
 	public static String C3 = "C3";
-	public static String C7 = "C6";
+	public static String C7 = "C7";
 	public static String C6 = "C6";
 	public static String B15 = "B15";
 	public static String B14 = "B14";
@@ -132,6 +132,12 @@ public class Variant{
 	public static String B = "B";
 	public static String C = "C";
 	
+	
+	public static int test = 0;
+	static int[] digitalOutputData = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	static int[] digitalInputData  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	static int[] digitalInputData1  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	
 	public Variant(){
 		//init(hippoADKLooper);
 	}
@@ -140,6 +146,163 @@ public class Variant{
     	
     } 
 
+	public static int GetPortNumber(int pin)		
+	{
+		int portNumber = 0;
+		//portNumber = (pin >> 3) & 0x0F;
+		portNumber = pin / 8;
+		return portNumber;
+	}
+	
+	public static int GetPinValue(int pin,int value)		
+	{
+		int portNumber = 0;
+		int pinvalue = 0;
+		portNumber = pin / 8;
+	    if (value == 0)
+	        digitalOutputData[portNumber] &= ~(1 << (pin % 8));
+	      else
+	        digitalOutputData[portNumber] |= (1 << (pin % 8));
+	    pinvalue = digitalOutputData[portNumber];
+		return pinvalue;
+	}
+	
+	public static int GetDigitalInputValue(int portNumber)		
+	{
+		int digitalInputValue = digitalInputData[portNumber];
+	    //pinvalue = digitalOutputData[portNumber];
+		return digitalInputValue;
+	}
+	
+	public static int GetInitPinValue(int pin,int value)		
+	{
+		int portNumber = 0;
+		int pinvalue = 0;
+		portNumber = pin / 8;
+	    if (value == 0)
+	        digitalInputData1[portNumber] &= ~(1 << (pin % 8));
+	      else
+	        digitalInputData1[portNumber] |= (1 << (pin % 8));
+	    pinvalue = digitalInputData1[portNumber];
+		return pinvalue;
+	}
+	
+	public static void SetDigitalOutputValue(int portNumber, int readValue)		
+	{
+		digitalOutputData[portNumber] = readValue;
+	}
+	
+	public static void SetDigitalInputValue(int portNumber, int readValue)		
+	{
+		digitalInputData[portNumber] = readValue;
+	}
+
+	/*
+	public static int GetAnalogWriteChanel(String pin)		
+	{
+		int analogWriteChanel = 0;
+		if(pin.equals(C12)){
+			analogWriteChanel = 0;
+		}else if(pin.equals(D2)){
+			analogWriteChanel = 1;
+		}else if(pin.equals(B5)){
+			analogWriteChanel = 2;
+		}else if(pin.equals(B6)){
+			analogWriteChanel = 3;
+		}else if(pin.equals(C7)){
+			analogWriteChanel = 4;
+		}else if(pin.equals(C6)){
+			analogWriteChanel = 5;
+		}else if(pin.equals(B15)){
+			analogWriteChanel = 6;
+		}else if(pin.equals(B14)){
+			analogWriteChanel = 7;
+		}else if(pin.equals(B11)){
+			analogWriteChanel = 8;
+		}else if(pin.equals(B10)){
+			analogWriteChanel = 9;
+		}else if(pin.equals(B1)){
+			analogWriteChanel = 10;
+		}else if(pin.equals(B0)){
+			analogWriteChanel = 11;
+		}else if(pin.equals(A3)){
+			analogWriteChanel = 12;
+		}else if(pin.equals(A2)){
+			analogWriteChanel = 13;
+		}
+		return analogWriteChanel;
+	}
+*/	
+	
+	public static int GetAnalogWriteChanel(String pin)		
+	{
+		int analogWriteChanel = 0;
+		if(pin.equals(C12)){
+			analogWriteChanel = 0;
+		}else if(pin.equals(D2)){
+			analogWriteChanel = 1;
+		}else if(pin.equals(B5)){
+			analogWriteChanel = 2;
+		}else if(pin.equals(B6)){
+			analogWriteChanel = 3;
+		}else if(pin.equals(C7)){
+			analogWriteChanel = 4;
+		}else if(pin.equals(C6)){
+			analogWriteChanel = 5;
+		}else if(pin.equals(B15)){
+			analogWriteChanel = 6;
+		}else if(pin.equals(B14)){
+			analogWriteChanel = 7;
+		}else if(pin.equals(B11)){
+			analogWriteChanel = 8;
+		}else if(pin.equals(B10)){
+			analogWriteChanel = 9;
+		}else if(pin.equals(B1)){
+			analogWriteChanel = 10;
+		}else if(pin.equals(B0)){
+			analogWriteChanel = 11;
+		}else if(pin.equals(A3)){
+			analogWriteChanel = 12;
+		}else if(pin.equals(A2)){
+			analogWriteChanel = 13;
+		}
+		return analogWriteChanel;
+	}
+	
+	public static int RemapAnalog(String pin)		
+	{
+		int i = 0;
+		if(pin.equals(C0)){
+			i = 0;
+		}else if(pin.equals(C1)){
+			i = 1;
+		}else if(pin.equals(C2)){
+			i = 2;
+		}else if(pin.equals(C3)){
+			i = 3;
+		}else if(pin.equals(B1)){
+			i = 4;
+		}else if(pin.equals(B0)){
+			i = 5;
+		}else if(pin.equals(A7)){
+			i = 6;
+		}else if(pin.equals(A6)){
+			i = 7;
+		}else if(pin.equals(A5)){
+			i = 8;
+		}else if(pin.equals(A4)){
+			i = 9;
+		}else if(pin.equals(A3)){
+			i = 10;
+		}else if(pin.equals(A2)){
+			i = 11;
+		}else if(pin.equals(A1)){
+			i = 12;
+		}else if(pin.equals(A0)){
+			i = 13;
+		}
+		return i;
+	}
 	public static int Remap(String pin)		
 	{
 		int i = 0;

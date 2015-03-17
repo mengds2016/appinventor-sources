@@ -17,6 +17,7 @@ import com.google.appinventor.components.runtime.util.ErrorMessages;
 import com.google.appinventor.components.runtime.util.SdkLevel;
 import com.google.appinventor.components.runtime.util.YailList;
 
+import android.os.Message;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -52,7 +53,17 @@ public abstract class BluetoothConnectionBase extends AndroidNonvisibleComponent
   private Object connectedBluetoothSocket;
   private InputStream inputStream;
   private OutputStream outputStream;
-
+  private Thread t;
+  
+  private byte[] bufferedReaderClient = new byte[512];
+  private int bufferedReaderClientCounter = 0;
+  private int bufferedReaderClientCounterSave = 0;
+  
+  private final List<DigitalRead> attachedComponents = new ArrayList<DigitalRead>();
+  private final List<AndroidNonvisibleComponent> attachedComponents1 = new ArrayList<AndroidNonvisibleComponent>();
+  
+  private String TAG = "BluetoothConnectionBase";
+  
   /**
    * Creates a new BluetoothConnectionBase.
    */
@@ -166,6 +177,8 @@ public abstract class BluetoothConnectionBase extends AndroidNonvisibleComponent
     outputStream = new BufferedOutputStream(
         BluetoothReflection.getOutputStream(connectedBluetoothSocket));
     fireAfterConnectEvent();
+   // t = new Thread(r);
+    //t.start();
   }
 
   /**
@@ -300,6 +313,18 @@ public abstract class BluetoothConnectionBase extends AndroidNonvisibleComponent
     return delimiter;
   }
 
+  
+  /**
+   * Converts the given text to bytes and writes them to the output stream.
+   *
+   * @param text the text to write
+   */
+  @SimpleFunction(description = "Send text to the connected Bluetooth device.")
+  public void ReadStart(String text) {
+	    t = new Thread(r);
+	    t.start();
+  }
+  
   /**
    * Converts the given text to bytes and writes them to the output stream.
    *
@@ -509,8 +534,8 @@ public abstract class BluetoothConnectionBase extends AndroidNonvisibleComponent
    */
   protected void write(String functionName, byte[] bytes) {
     if (!IsConnected()) {
-      bluetoothError(functionName,
-          ErrorMessages.ERROR_BLUETOOTH_NOT_CONNECTED_TO_DEVICE);
+      //bluetoothError(functionName,
+          //ErrorMessages.ERROR_BLUETOOTH_NOT_CONNECTED_TO_DEVICE);
       return;
     }
 
@@ -811,4 +836,846 @@ public abstract class BluetoothConnectionBase extends AndroidNonvisibleComponent
       Disconnect();
     }
   }
+  
+  private Runnable r = new Runnable() {
+		public void run() {
+			while (true) {
+				try {
+					byte[] buffer = new byte[512];
+					//inputStream = btSocket.getInputStream();
+					byte[] receivebuffer = new byte[512];
+					int count = 0;
+					if ((count = inputStream.read(buffer)) > 0) {
+						byte[] tmp = new byte[count];
+						System.arraycopy(buffer, 0, tmp, 0, count);
+						for (int tmp_Counter = 0; tmp_Counter < tmp.length; tmp_Counter++) {
+							bufferedReaderClient[bufferedReaderClientCounter] = tmp[tmp_Counter];
+							Log.d(TAG,"bufferedReader = " + tmp[tmp_Counter]);
+							if ((tmp[tmp_Counter] & 0xF0) > 0x0F) {
+								bufferedReaderClientCounterSave = bufferedReaderClientCounter;
+							}
+							byte[] commandPacketRead = new byte[5];
+							if(bufferedReaderClientCounter - bufferedReaderClientCounterSave == 4 ){
+								commandPacketRead[0] = bufferedReaderClient[bufferedReaderClientCounterSave];
+								commandPacketRead[1] = bufferedReaderClient[bufferedReaderClientCounterSave + 1];
+								commandPacketRead[2] = bufferedReaderClient[bufferedReaderClientCounterSave + 2];
+								commandPacketRead[3] = bufferedReaderClient[bufferedReaderClientCounterSave + 3];
+								commandPacketRead[4] = bufferedReaderClient[bufferedReaderClientCounterSave + 4];
+								if((commandPacketRead[0] & 0xF1) == 0xF1){
+									//Connected
+									for(int i = 0;i < attachedComponents1.size();i++){
+										if(!(attachedComponents1.get(i)==null)){
+											attachedComponents1.get(i).Init();
+										}
+									}
+								}else{
+								if((commandPacketRead[0] & 0xF0) == 0xC0){
+									int pin = commandPacketRead[0] & 0x0F;//
+									for(int i = 0;i < attachedComponents1.size();i++){
+									if(!(attachedComponents1.get(i)==null)){
+										String Temp = attachedComponents1.get(i).GetPin();
+										int temp = Variant.RemapAnalog(Temp);
+										if(pin == temp){
+											int value = 0;
+											value = commandPacketRead[2] * 128 + commandPacketRead[1];
+											attachedComponents1.get(i).AnalogRead2(value/64);
+											//Log.d(TAG,"portNumber = " + portNumber);
+											Log.d(TAG,"pin = " + pin);
+											Log.d(TAG,"value = " + (int)(value));
+										}
+									}
+									}
+								}
+								if((commandPacketRead[0] & 0xF0) == 0xD0){
+									int portNumber = commandPacketRead[0] & 0x0F;
+									byte readValue = (byte) ((commandPacketRead[2] << 7)|commandPacketRead[1]);
+									Log.d(TAG,"readValue = " + (int)readValue);
+									byte digitalInputValue = (byte)Variant.GetDigitalInputValue(portNumber);
+									Log.d(TAG,"digitalInputValue = " + (int)digitalInputValue);
+									
+									if(!((readValue & 0x01) == (digitalInputValue & 0x01))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 1;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x01) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x02) == (digitalInputValue & 0x02))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 2;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x02) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x04) == (digitalInputValue & 0x04))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 3;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x04) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(((readValue & 0x08) != (digitalInputValue & 0x08))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 4;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x08) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x10) == (digitalInputValue & 0x10))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 5;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x10) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x20) == (digitalInputValue & 0x20))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 6;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x20) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x40) == (digitalInputValue & 0x40))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 7;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x40) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									
+									if(!((readValue & 0x80) == (digitalInputValue & 0x80))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 8;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x80) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									Variant.SetDigitalInputValue(portNumber,readValue);
+								}
+								
+								if((commandPacketRead[0] & 0xF0) == 0xD0){
+									int portNumber = commandPacketRead[0] & 0x0F;
+									byte readValue = (byte) ((commandPacketRead[2] << 7)|commandPacketRead[1]);
+									Log.d(TAG,"readValue = " + (int)readValue);
+									byte digitalInputValue = (byte)Variant.GetDigitalInputValue(portNumber);
+									Log.d(TAG,"digitalInputValue = " + (int)digitalInputValue);
+									
+									if(!((readValue & 0x01) == (digitalInputValue & 0x01))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 1;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x01) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x02) == (digitalInputValue & 0x02))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 2;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x02) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x04) == (digitalInputValue & 0x04))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 3;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x04) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(((readValue & 0x08) != (digitalInputValue & 0x08))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 4;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x08) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x10) == (digitalInputValue & 0x10))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 5;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x10) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x20) == (digitalInputValue & 0x20))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 6;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x20) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x40) == (digitalInputValue & 0x40))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 7;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x40) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									
+									if(!((readValue & 0x80) == (digitalInputValue & 0x80))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 8;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x80) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									Variant.SetDigitalInputValue(portNumber,readValue);
+								}
+							}
+							}
+							if(bufferedReaderClientCounter - bufferedReaderClientCounterSave + 512 == 4 ){
+								commandPacketRead[0] = bufferedReaderClient[bufferedReaderClientCounterSave];
+								commandPacketRead[1] = bufferedReaderClient[bufferedReaderClientCounterSave + 1];
+								commandPacketRead[2] = bufferedReaderClient[bufferedReaderClientCounterSave + 2];
+								commandPacketRead[3] = bufferedReaderClient[bufferedReaderClientCounterSave + 3];
+								commandPacketRead[4] = bufferedReaderClient[bufferedReaderClientCounterSave + 4];
+								if((commandPacketRead[0] & 0xF1) == 0xF1){
+									//Connected
+									for(int i = 0;i < attachedComponents1.size();i++){
+										if(!(attachedComponents1.get(i)==null)){
+											attachedComponents1.get(i).Init();
+										}
+									}
+								}else{
+								if((commandPacketRead[0] & 0xF0) == 0xC0){
+									int pin = commandPacketRead[0] & 0x0F;//
+									for(int i = 0;i < attachedComponents1.size();i++){
+									if(!(attachedComponents1.get(i)==null)){
+										String Temp = attachedComponents1.get(i).GetPin();
+										int temp = Variant.RemapAnalog(Temp);
+										if(pin == temp){
+											int value = 0;
+											value = commandPacketRead[2] * 128 + commandPacketRead[1];
+											attachedComponents1.get(i).AnalogRead2(value/64);
+											//Log.d(TAG,"portNumber = " + portNumber);
+											Log.d(TAG,"pin = " + pin);
+											Log.d(TAG,"value = " + (int)(value));
+										}
+									}
+									}
+								}
+								if((commandPacketRead[0] & 0xF0) == 0xD0){
+									int portNumber = commandPacketRead[0] & 0x0F;
+									byte readValue = (byte) ((commandPacketRead[2] << 7)|commandPacketRead[1]);
+									Log.d(TAG,"readValue = " + (int)readValue);
+									byte digitalInputValue = (byte)Variant.GetDigitalInputValue(portNumber);
+									Log.d(TAG,"digitalInputValue = " + (int)digitalInputValue);
+									
+									if(!((readValue & 0x01) == (digitalInputValue & 0x01))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 1;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x01) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x02) == (digitalInputValue & 0x02))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 2;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x02) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x04) == (digitalInputValue & 0x04))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 3;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x04) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(((readValue & 0x08) != (digitalInputValue & 0x08))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 4;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x08) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x10) == (digitalInputValue & 0x10))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 5;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x10) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x20) == (digitalInputValue & 0x20))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 6;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x20) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x40) == (digitalInputValue & 0x40))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 7;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x40) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									
+									if(!((readValue & 0x80) == (digitalInputValue & 0x80))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 8;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x80) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									Variant.SetDigitalInputValue(portNumber,readValue);
+								}
+								
+								if((commandPacketRead[0] & 0xF0) == 0xD0){
+									int portNumber = commandPacketRead[0] & 0x0F;
+									byte readValue = (byte) ((commandPacketRead[2] << 7)|commandPacketRead[1]);
+									Log.d(TAG,"readValue = " + (int)readValue);
+									byte digitalInputValue = (byte)Variant.GetDigitalInputValue(portNumber);
+									Log.d(TAG,"digitalInputValue = " + (int)digitalInputValue);
+									
+									if(!((readValue & 0x01) == (digitalInputValue & 0x01))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 1;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x01) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x02) == (digitalInputValue & 0x02))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 2;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x02) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x04) == (digitalInputValue & 0x04))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 3;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x04) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(((readValue & 0x08) != (digitalInputValue & 0x08))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 4;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x08) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x10) == (digitalInputValue & 0x10))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 5;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x10) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x20) == (digitalInputValue & 0x20))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 6;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x20) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									if(!((readValue & 0x40) == (digitalInputValue & 0x40))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 7;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x40) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									
+									
+									if(!((readValue & 0x80) == (digitalInputValue & 0x80))){
+										for(int i = 0;i < attachedComponents1.size();i++){
+											int pin = portNumber * 8 + 8;
+											if(!(attachedComponents1.get(i)==null)){
+												String Temp = attachedComponents1.get(i).GetPin();
+												int temp = Variant.Remap(Temp);
+												if(pin == temp){
+													int value = 0;
+													if((readValue & 0x80) > 0){
+														value = 1;
+													}else{
+														value = 0;
+													}
+													attachedComponents1.get(i).digitalRead2(value);
+													Log.d(TAG,"portNumber = " + portNumber);
+													Log.d(TAG,"pin = " + pin);
+													Log.d(TAG,"value = " + (int)(value));
+												}
+											}
+										}
+									}
+									Variant.SetDigitalInputValue(portNumber,readValue);
+								}
+							}
+							}
+							bufferedReaderClientCounter++;
+							if(bufferedReaderClientCounter == 512){
+								bufferedReaderClientCounter = 0;
+							}
+						}
+					}
+					
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		
+		}
+	};
+	
 }

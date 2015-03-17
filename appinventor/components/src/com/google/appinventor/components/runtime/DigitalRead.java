@@ -10,6 +10,7 @@ import com.google.appinventor.components.annotations.DesignerComponent;
 import com.google.appinventor.components.annotations.DesignerProperty;
 import com.google.appinventor.components.annotations.PropertyCategory;
 import com.google.appinventor.components.annotations.SimpleEvent;
+import com.google.appinventor.components.annotations.SimpleFunction;
 import com.google.appinventor.components.annotations.SimpleObject;
 import com.google.appinventor.components.annotations.SimpleProperty;
 import com.google.appinventor.components.common.ComponentCategory;
@@ -63,14 +64,15 @@ import java.util.Queue;
     nonVisible = true,
     iconName = "images/hippoadk.png")
 @SimpleObject
-public class DigitalRead extends AndroidNonvisibleComponent  {
+public class DigitalRead extends AndroidNonvisibleComponent implements BluetoothConnectionListener  {
   private static final int TOY_ROBOT = 0x0804; // from android.bluetooth.BluetoothClass.Device.
 
   // Backing for sensor values
-  private float xAccel;
+  private int Value;
   
   protected UsbAccessory usbaccessory;
   private String TAG = "DigitalRead";
+  protected BluetoothClient bluetooth;
   private String Pin = "";
   
   /**
@@ -101,25 +103,82 @@ public class DigitalRead extends AndroidNonvisibleComponent  {
       defaultValue = "")
   @SimpleProperty
   public void Pin(String pin) {
+	  Log.d(TAG,"String pin");
+		byte[] USBCommandPacket = new byte[5];
+		int pin1 = Variant.Remap(Pin) - 1;
+		int portNumber = Variant.GetPortNumber(pin1);
+		int initPinValue = Variant.GetInitPinValue(pin1,0);
+		USBCommandPacket[0] = (byte) (0xD0 | ((byte)portNumber));
+		USBCommandPacket[1] = (byte) (initPinValue & 0X7F);
+		USBCommandPacket[2]	= (byte) (initPinValue >> 7);
+		if(usbaccessory != null){
+			usbaccessory.SendCommand(USBCommandPacket);
+			Log.d(TAG,"USBCommandPacket[0] = " + (int)USBCommandPacket[0]);
+			Log.d(TAG,"USBCommandPacket[1] = " + (int)USBCommandPacket[1]);
+			Log.d(TAG,"USBCommandPacket[2] = " + (int)USBCommandPacket[2]);
+		}
     Pin = pin;
+    pin1 = Variant.Remap(Pin) - 1;
+	portNumber = Variant.GetPortNumber(pin1);
+	initPinValue = Variant.GetInitPinValue(pin1,1);
+	USBCommandPacket[0] = (byte) (0xD0 | ((byte)portNumber));
+	USBCommandPacket[1] = (byte) (initPinValue & 0X7F);
+	USBCommandPacket[2]	= (byte) (initPinValue >> 7);
+	if(usbaccessory != null){
+		usbaccessory.SendCommand(USBCommandPacket);
+	}
+	Log.d(TAG,"USBCommandPacket[0] = " + (int)USBCommandPacket[0]);
+	Log.d(TAG,"USBCommandPacket[1] = " + (int)USBCommandPacket[1]);
+	Log.d(TAG,"USBCommandPacket[2] = " + (int)USBCommandPacket[2]);
   }
   
   /**
    * Indicates the acceleration changed in the X, Y, and/or Z dimensions.
    */
   @SimpleEvent
-  public void digitalRead1(int i) {
-	xAccel = i;
+  public void digitalRead1(int value) {
+	Value = value;
 	Log.d(TAG,"digitalRead1");
-    EventDispatcher.dispatchEvent(this, "digitalRead1", xAccel);
+    EventDispatcher.dispatchEvent(this, "digitalRead1", Value);
   }
 
-  public void digitalRead2(int i) {
-		xAccel = i;
+  public void digitalRead2(int value) {
+	  	Value = value;
 		Log.d(TAG,"digitalRead1");
-		digitalRead1(i);
+		digitalRead1(Value);
 	  }
 
+	@SimpleFunction(description = "Init")
+	public void InitForTest(int value) {
+		byte[] USBCommandPacket = new byte[5];
+		int pin = Variant.Remap(Pin) - 1;
+		int portNumber = Variant.GetPortNumber(pin);
+		int initPinValue = Variant.GetInitPinValue(pin,1);
+		USBCommandPacket[0] = (byte) (0xD0 | ((byte)portNumber));
+		USBCommandPacket[1] = (byte) (initPinValue & 0X7F);
+		USBCommandPacket[2]	= (byte) (initPinValue >> 7);
+		usbaccessory.SendCommand(USBCommandPacket);
+		Log.d(TAG,"USBCommandPacket[0] = " + (int)USBCommandPacket[0]);
+		Log.d(TAG,"USBCommandPacket[1] = " + (int)USBCommandPacket[1]);
+		Log.d(TAG,"USBCommandPacket[2] = " + (int)USBCommandPacket[2]);
+	}
+
+
+	public int Init() {
+		byte[] USBCommandPacket = new byte[5];
+		int pin = Variant.Remap(Pin) - 1;
+		int portNumber = Variant.GetPortNumber(pin);
+		int initPinValue = Variant.GetInitPinValue(pin,1);
+		USBCommandPacket[0] = (byte) (0xD0 | ((byte)portNumber));
+		USBCommandPacket[1] = (byte) (initPinValue & 0X7F);
+		USBCommandPacket[2]	= (byte) (initPinValue >> 7);
+		usbaccessory.SendCommand(USBCommandPacket);
+		Log.d(TAG,"USBCommandPacket[0] = " + (int)USBCommandPacket[0]);
+		Log.d(TAG,"USBCommandPacket[1] = " + (int)USBCommandPacket[1]);
+		Log.d(TAG,"USBCommandPacket[2] = " + (int)USBCommandPacket[2]);
+		return 1;
+	}
+	
   public String GetPin() {
 	  return Pin;
   }
@@ -144,8 +203,43 @@ public class DigitalRead extends AndroidNonvisibleComponent  {
    * @return  X acceleration
    */
   @SimpleProperty(category = PropertyCategory.BEHAVIOR)
-  public float XAccel() {
-    return xAccel;
+  public float Value() {
+    return Value;
   }
   
+  /**
+   * Specifies the BluetoothClient component that should be used for communication.
+   */
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_BLUETOOTHCLIENT,
+      defaultValue = "")
+  @SimpleProperty(userVisible = false)
+  public void BluetoothClient(BluetoothClient bluetoothClient) {
+  //  if (bluetooth != null) {
+  //    bluetooth.removeBluetoothConnectionListener(this);
+  //    bluetooth.detachComponent(this);
+  //    bluetooth = null;
+   // }
+
+    if (bluetoothClient != null) {
+      bluetooth = bluetoothClient;
+      //bluetooth.attachComponent(this, Collections.singleton(TOY_ROBOT));
+      bluetooth.addBluetoothConnectionListener(this);
+      if (bluetooth.IsConnected()) {
+         //We missed the real afterConnect event.
+        afterConnect(bluetooth);
+      }
+    }
+  }
+  
+  @Override
+  public void afterConnect(BluetoothConnectionBase bluetoothConnection) {
+  	// TODO Auto-generated method stub
+  	
+  }
+
+  @Override
+  public void beforeDisconnect(BluetoothConnectionBase bluetoothConnection) {
+  	// TODO Auto-generated method stub
+  	
+  }
 }

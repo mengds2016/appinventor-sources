@@ -96,6 +96,7 @@ public final class SimpleComponentDescriptor {
     bundledImages.put("images/legoMindstormsNxt.png", images.legoMindstormsNxt());
 	bundledImages.put("images/hippoadk.png", images.hippoadk());
 	bundledImages.put("images/usb.png", images.usb());
+	bundledImages.put("images/wifi.png", images.wifi());
     bundledImages.put("images/orientationsensor.png", images.orientationsensor());
     bundledImages.put("images/pedometer.png", images.pedometerComponent());
     bundledImages.put("images/phoneip.png", images.phonestatusComponent());

@@ -107,7 +107,7 @@ public class SixAxisSensor extends AndroidNonvisibleComponent
   private Sensor accelerometerSensor;
   private Sensor gyroscopeSensor;
   
-  private static float Q_angle=0.005f, Q_gyro=0.003f, R_angle=0.5f, dt=0.008f;
+  private static float Q_angle=0.005f, Q_gyro=0.003f, R_angle=0.5f, dt=0.010f;
   private static float q_bias=0, angle_err, PCt_0, PCt_1, E, K_0, K_1, t_0, t_1;
   private static float P[][] = { { 1, 0 }, { 0, 1 } };
   private static float Pdot[] ={0,0,0,0};
@@ -201,7 +201,7 @@ public class SixAxisSensor extends AndroidNonvisibleComponent
   private void startListening() {
     //sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
     sensorManager.registerListener(this, accelerometerSensor, 20000);
-    sensorManager.registerListener(this, gyroscopeSensor, 8000);
+    sensorManager.registerListener(this, gyroscopeSensor, 10000);
   }
 
   // Assumes that sensorManager has been initialized, which happens in constructor
@@ -307,7 +307,7 @@ public class SixAxisSensor extends AndroidNonvisibleComponent
         	else
         		Use_Time=(Current_Time-Early_Time);
 			Early_Time=Current_Time;
-			dt = (float)Use_Time *(1.0f / 1000.0f);
+			//dt = (float)Use_Time *(1.0f / 1000.0f);
 			float Measure_Gyroscope = 57.3f * (event.values[SensorManager.DATA_X]);
 			//float Measure_Gyroscope = -1*57.3f * (event.values[SensorManager.DATA_Y]);
 			Sum_Measure_Gyroscope += Measure_Gyroscope * dt;

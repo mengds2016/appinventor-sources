@@ -38,7 +38,26 @@ public abstract class AndroidNonvisibleComponent implements Component {
   public void digitalRead2(int i) {
 
 	  }
+  
+  public void digitalRead2(int i, int j) {
+
+  }
+  
+  public void AnalogRead2(int i) {
+
+  }
+  
+  public int Init() {
+	  int i = 0;
+	  return i;
+  }
+  
   public String GetPin() {
 	  return Pin;
   }
+  
+  public void SendInitCommand() {
+
+  }
+  
 }

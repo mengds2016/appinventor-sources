@@ -366,6 +366,12 @@ public interface Images extends Resources {
    */
   @Source("com/google/appinventor/images/usb.png")
   ImageResource usb();
+
+  /**
+   * Designer palette item: Lego Mindstorms NXT components
+   */
+  @Source("com/google/appinventor/images/wifi.png")
+  ImageResource wifi();
   
   /**
    * Designer palette item: Bluetooth components

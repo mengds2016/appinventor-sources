@@ -294,6 +294,9 @@ public final class BluetoothClient extends BluetoothConnectionBase {
     }
     BluetoothReflection.connectToBluetoothSocket(bluetoothSocket);
     setConnection(bluetoothSocket);
+    //t = new Thread(r);
+    //t.start();
+    
     Log.i(logTag, "Connected to Bluetooth device " +
         BluetoothReflection.getBluetoothDeviceAddress(bluetoothDevice) + " " +
         BluetoothReflection.getBluetoothDeviceName(bluetoothDevice) + ".");

@@ -10,7 +10,6 @@ import com.google.appinventor.components.annotations.DesignerComponent;
 import com.google.appinventor.components.annotations.DesignerProperty;
 import com.google.appinventor.components.annotations.PropertyCategory;
 import com.google.appinventor.components.annotations.SimpleEvent;
-import com.google.appinventor.components.annotations.SimpleFunction;
 import com.google.appinventor.components.annotations.SimpleObject;
 import com.google.appinventor.components.annotations.SimpleProperty;
 import com.google.appinventor.components.common.ComponentCategory;
@@ -20,7 +19,6 @@ import com.google.appinventor.components.runtime.util.ErrorMessages;
 
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -65,26 +63,29 @@ import java.util.Queue;
     nonVisible = true,
     iconName = "images/hippoadk.png")
 @SimpleObject
-public class DigitalWrite extends AndroidNonvisibleComponent implements BluetoothConnectionListener {
+public class Encoder extends AndroidNonvisibleComponent  {
   private static final int TOY_ROBOT = 0x0804; // from android.bluetooth.BluetoothClass.Device.
+
+  // Backing for sensor values
+  private float xAccel;
+  private float EncoderLeft;
+  private float EncoderRight;
   
   protected UsbAccessory usbaccessory;
-  protected BluetoothClient bluetooth;
-  private String TAG = "DigitalRead";
-  public String Pin = "";
-  private int Flag = 0;
+  private String TAG = "Encoder";
+  private String Pin = "Encoder";
   
   /**
    * Creates a new AccelerometerSensor component.
    *
    * @param container  ignored (because this is a non-visible component)
    */
-  public DigitalWrite(ComponentContainer container){
+  public Encoder(ComponentContainer container){
     super(container.$form());
     //form.registerForOnResume(this);
     //form.registerForOnStop(this);
   }
-  
+
   /**
 
    */
@@ -99,33 +100,32 @@ public class DigitalWrite extends AndroidNonvisibleComponent implements Bluetoot
    * Specifies the motor ports that are used for driving.
    */
   @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_STRING,
-      defaultValue = "")
+      defaultValue = "Encoder")
   @SimpleProperty
   public void Pin(String pin) {
     Pin = pin;
   }
   
-	@SimpleFunction(description = "DigitalWrite")
-	public void DigitalWrite(int value) {
-		byte[] USBCommandPacket = new byte[5];
-		int pin = Variant.Remap(Pin) - 1;
-		int portNumber = Variant.GetPortNumber(pin);
-		int pinValue = Variant.GetPinValue(pin,value);
-		USBCommandPacket[0] = (byte) (0x90 | ((byte)portNumber));
-		USBCommandPacket[1] = (byte) (pinValue & 0X7F);
-		USBCommandPacket[2]	= (byte) (pinValue >> 7);
-		if (usbaccessory != null) {
-			usbaccessory.SendCommand(USBCommandPacket);
-		}
-	    if (bluetooth != null) {
-	    	bluetooth.write("ss",USBCommandPacket);
-	    }
-		Log.d(TAG,"pinValue = " + pinValue);
-		Log.d(TAG,"USBCommandPacket[0] = " + (int)USBCommandPacket[0]);
-		Log.d(TAG,"USBCommandPacket[1] = " + (int)USBCommandPacket[1]);
-		Log.d(TAG,"USBCommandPacket[2] = " + (int)USBCommandPacket[2]);
-		Variant.SetDigitalOutputValue(portNumber,pinValue);
-	}
+  /**
+   * Indicates the acceleration changed in the X, Y, and/or Z dimensions.
+   */
+  @SimpleEvent
+  public void digitalRead1(int i, int j) {
+	EncoderLeft = i;	  
+	EncoderRight = j;
+	Log.d(TAG,"digitalRead1");
+    EventDispatcher.dispatchEvent(this, "digitalRead1", EncoderLeft,EncoderRight);
+  }
+
+  public void digitalRead2(int i, int j) {
+		xAccel = i;
+		Log.d(TAG,"digitalRead1");
+		digitalRead1(i,j);
+	  }
+
+  public String GetPin() {
+	  return Pin;
+  }
   
   /**
    * Specifies the BluetoothClient component that should be used for communication.
@@ -136,44 +136,40 @@ public class DigitalWrite extends AndroidNonvisibleComponent implements Bluetoot
   public void UsbAccessory(UsbAccessory usbaccessory1) {
     if (usbaccessory1 != null) {
     	usbaccessory = usbaccessory1;
-    	//usbaccessory.attachComponent(this, Collections.singleton(TOY_ROBOT));
+    	usbaccessory.attachComponent(this, Collections.singleton(TOY_ROBOT));
     }
   }
   
   /**
-   * Specifies the BluetoothClient component that should be used for communication.
+   * Returns the acceleration in the X-dimension in SI units (m/s^2).
+   * The sensor must be enabled to return meaningful values.
+   *
+   * @return  X acceleration
    */
-  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_BLUETOOTHCLIENT,
-      defaultValue = "")
-  @SimpleProperty(userVisible = false)
-  public void BluetoothClient(BluetoothClient bluetoothClient) {
-  //  if (bluetooth != null) {
-  //    bluetooth.removeBluetoothConnectionListener(this);
-  //    bluetooth.detachComponent(this);
-  //    bluetooth = null;
-   // }
-
-    if (bluetoothClient != null) {
-      bluetooth = bluetoothClient;
-      //bluetooth.attachComponent(this, Collections.singleton(TOY_ROBOT));
-      bluetooth.addBluetoothConnectionListener(this);
-      if (bluetooth.IsConnected()) {
-         //We missed the real afterConnect event.
-        afterConnect(bluetooth);
-      }
-    }
+  @SimpleProperty(category = PropertyCategory.BEHAVIOR)
+  public float XAccel() {
+    return xAccel;
   }
   
-  @Override
-  public void afterConnect(BluetoothConnectionBase bluetoothConnection) {
-  	// TODO Auto-generated method stub
-  	
-  }
-
-  @Override
-  public void beforeDisconnect(BluetoothConnectionBase bluetoothConnection) {
-  	// TODO Auto-generated method stub
-  	
+  /**
+   * Returns the acceleration in the X-dimension in SI units (m/s^2).
+   * The sensor must be enabled to return meaningful values.
+   *
+   * @return  X acceleration
+   */
+  @SimpleProperty(category = PropertyCategory.BEHAVIOR)
+  public float EncoderRight() {
+    return EncoderRight;
   }
   
+  /**
+   * Returns the acceleration in the X-dimension in SI units (m/s^2).
+   * The sensor must be enabled to return meaningful values.
+   *
+   * @return  X acceleration
+   */
+  @SimpleProperty(category = PropertyCategory.BEHAVIOR)
+  public float EncoderLeft() {
+    return EncoderLeft;
+  }
 }

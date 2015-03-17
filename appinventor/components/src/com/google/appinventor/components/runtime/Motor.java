@@ -65,10 +65,11 @@ import java.util.Queue;
     nonVisible = true,
     iconName = "images/hippoadk.png")
 @SimpleObject
-public class Motor extends AndroidNonvisibleComponent  {
+public class Motor extends AndroidNonvisibleComponent implements BluetoothConnectionListener  {
   private static final int TOY_ROBOT = 0x0804; // from android.bluetooth.BluetoothClass.Device.
   
   protected UsbAccessory usbaccessory;
+  protected BluetoothClient bluetooth;
   private String TAG = "AnalogWrite";
   private String MotorPort = "";
   private int Flag = 0;
@@ -104,16 +105,35 @@ public class Motor extends AndroidNonvisibleComponent  {
   
 	@SimpleFunction(description = "MotorDrive")
 	public void MotorDrive(int value) {
-		byte[] USBCommandPacket = new byte[13];
-		USBCommandPacket[0] = 0x00;
-		USBCommandPacket[4] = 0x08;
-		int temp = Variant.Remap(MotorPort);
-		USBCommandPacket[9] = (byte) temp;
-		for (int i = 5; i < 9; i++) {
-			USBCommandPacket[i] = (byte) (value >>> (24 - (i-5) * 8));
+		byte[] USBCommandPacket = new byte[5];
+		USBCommandPacket[0] = (byte) 0xF4;
+		if(MotorPort.equals("A")){
+			USBCommandPacket[1] = (byte) 0x10;
 		}
-		//USBCommandPacket[6] = (byte) value;
+		if(MotorPort.equals("B")){
+			USBCommandPacket[1] = (byte) 0x20;
+		}
+		if(MotorPort.equals("C")){
+			USBCommandPacket[1] = (byte) 0x30;
+		}
+		if(value < 0){
+			USBCommandPacket[1] |= 0x01;
+			USBCommandPacket[2]	= (byte) ((-1 * value) & 0X7F);
+			USBCommandPacket[3]	= (byte) ((-1 *value) >> 7);
+		}else{
+			USBCommandPacket[1] &= 0xFE;
+			USBCommandPacket[2]	= (byte) (value & 0X7F);
+			USBCommandPacket[3]	= (byte) (value >> 7);
+		}
+	    if (usbaccessory != null) {
 		usbaccessory.SendCommand(USBCommandPacket);
+	    }
+	    if (bluetooth != null) {
+	    	bluetooth.write("ss",USBCommandPacket);
+	    }
+		Log.d(TAG,"USBCommandPacket[0] = " + (int)USBCommandPacket[0]);
+		Log.d(TAG,"USBCommandPacket[1] = " + (int)USBCommandPacket[1]);
+		Log.d(TAG,"USBCommandPacket[2] = " + (int)USBCommandPacket[2]);
 	}
 
   /**
@@ -128,5 +148,41 @@ public class Motor extends AndroidNonvisibleComponent  {
     	//usbaccessory.attachComponent(this, Collections.singleton(TOY_ROBOT));
     }
   }
+  
+  /**
+   * Specifies the BluetoothClient component that should be used for communication.
+   */
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_BLUETOOTHCLIENT,
+      defaultValue = "")
+  @SimpleProperty(userVisible = false)
+  public void BluetoothClient(BluetoothClient bluetoothClient) {
+  //  if (bluetooth != null) {
+  //    bluetooth.removeBluetoothConnectionListener(this);
+  //    bluetooth.detachComponent(this);
+  //    bluetooth = null;
+   // }
+
+    if (bluetoothClient != null) {
+      bluetooth = bluetoothClient;
+      //bluetooth.attachComponent(this, Collections.singleton(TOY_ROBOT));
+      bluetooth.addBluetoothConnectionListener(this);
+      if (bluetooth.IsConnected()) {
+         //We missed the real afterConnect event.
+        afterConnect(bluetooth);
+      }
+    }
+  }
+
+@Override
+public void afterConnect(BluetoothConnectionBase bluetoothConnection) {
+	// TODO Auto-generated method stub
+	
+}
+
+@Override
+public void beforeDisconnect(BluetoothConnectionBase bluetoothConnection) {
+	// TODO Auto-generated method stub
+	
+}
   
 }

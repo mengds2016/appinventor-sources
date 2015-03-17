@@ -65,10 +65,11 @@ import java.util.Queue;
     nonVisible = true,
     iconName = "images/hippoadk.png")
 @SimpleObject
-public class AnalogWrite extends AndroidNonvisibleComponent  {
+public class AnalogWrite extends AndroidNonvisibleComponent implements BluetoothConnectionListener  {
   private static final int TOY_ROBOT = 0x0804; // from android.bluetooth.BluetoothClass.Device.
   
   protected UsbAccessory usbaccessory;
+  protected BluetoothClient bluetooth;
   private String TAG = "AnalogWrite";
   private String Pin = "";
   private int Flag = 0;
@@ -104,13 +105,21 @@ public class AnalogWrite extends AndroidNonvisibleComponent  {
   
 	@SimpleFunction(description = "AnalogWrite")
 	public void AnalogWrite(int value) {
-		byte[] USBCommandPacket = new byte[13];
-		USBCommandPacket[0] = 0x06;
-		USBCommandPacket[4] = 0x08;
-		int temp = Variant.Remap(Pin);
-		USBCommandPacket[5] = (byte) temp;
-		USBCommandPacket[6] = (byte) value;
-		usbaccessory.SendCommand(USBCommandPacket);
+		byte[] USBCommandPacket = new byte[5];
+		int analogWriteChanel = Variant.GetAnalogWriteChanel(Pin);
+		//int pinValue = Variant.GetPinValue(portNumber,value);
+		USBCommandPacket[0] = (byte) (0xE0 | ((byte)analogWriteChanel));
+		USBCommandPacket[1] = (byte) (value & 0X7F);
+		USBCommandPacket[2]	= (byte) (value >> 7);
+		if (usbaccessory != null) {
+			usbaccessory.SendCommand(USBCommandPacket);
+		}
+	    if (bluetooth != null) {
+	    	bluetooth.write("ss",USBCommandPacket);
+	    }
+		Log.d(TAG,"USBCommandPacket[0] = " + (int)USBCommandPacket[0]);
+		Log.d(TAG,"USBCommandPacket[1] = " + (int)USBCommandPacket[1]);
+		Log.d(TAG,"USBCommandPacket[2] = " + (int)USBCommandPacket[2]);
 	}
   
   /**
@@ -124,6 +133,42 @@ public class AnalogWrite extends AndroidNonvisibleComponent  {
     	usbaccessory = usbaccessory1;
     	//usbaccessory.attachComponent(this, Collections.singleton(TOY_ROBOT));
     }
+  }
+  
+  /**
+   * Specifies the BluetoothClient component that should be used for communication.
+   */
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_BLUETOOTHCLIENT,
+      defaultValue = "")
+  @SimpleProperty(userVisible = false)
+  public void BluetoothClient(BluetoothClient bluetoothClient) {
+  //  if (bluetooth != null) {
+  //    bluetooth.removeBluetoothConnectionListener(this);
+  //    bluetooth.detachComponent(this);
+  //    bluetooth = null;
+   // }
+
+    if (bluetoothClient != null) {
+      bluetooth = bluetoothClient;
+      //bluetooth.attachComponent(this, Collections.singleton(TOY_ROBOT));
+      bluetooth.addBluetoothConnectionListener(this);
+      if (bluetooth.IsConnected()) {
+         //We missed the real afterConnect event.
+        afterConnect(bluetooth);
+      }
+    }
+  }
+  
+  @Override
+  public void afterConnect(BluetoothConnectionBase bluetoothConnection) {
+  	// TODO Auto-generated method stub
+  	
+  }
+
+  @Override
+  public void beforeDisconnect(BluetoothConnectionBase bluetoothConnection) {
+  	// TODO Auto-generated method stub
+  	
   }
   
 }
