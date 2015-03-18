@@ -103,9 +103,8 @@ public class DigitalRead extends AndroidNonvisibleComponent implements Bluetooth
       defaultValue = "")
   @SimpleProperty
   public void Pin(String pin) {
-	  Log.d(TAG,"String pin");
 		byte[] USBCommandPacket = new byte[5];
-		int pin1 = Variant.Remap(Pin) - 1;
+		int pin1 = Variant.Remap(Pin);
 		int portNumber = Variant.GetPortNumber(pin1);
 		int initPinValue = Variant.GetInitPinValue(pin1,0);
 		USBCommandPacket[0] = (byte) (0xD0 | ((byte)portNumber));
@@ -113,9 +112,6 @@ public class DigitalRead extends AndroidNonvisibleComponent implements Bluetooth
 		USBCommandPacket[2]	= (byte) (initPinValue >> 7);
 		if(usbaccessory != null){
 			usbaccessory.SendCommand(USBCommandPacket);
-			Log.d(TAG,"USBCommandPacket[0] = " + (int)USBCommandPacket[0]);
-			Log.d(TAG,"USBCommandPacket[1] = " + (int)USBCommandPacket[1]);
-			Log.d(TAG,"USBCommandPacket[2] = " + (int)USBCommandPacket[2]);
 		}
     Pin = pin;
     pin1 = Variant.Remap(Pin) - 1;
@@ -151,7 +147,7 @@ public class DigitalRead extends AndroidNonvisibleComponent implements Bluetooth
 	@SimpleFunction(description = "Init")
 	public void InitForTest(int value) {
 		byte[] USBCommandPacket = new byte[5];
-		int pin = Variant.Remap(Pin) - 1;
+		int pin = Variant.Remap(Pin);
 		int portNumber = Variant.GetPortNumber(pin);
 		int initPinValue = Variant.GetInitPinValue(pin,1);
 		USBCommandPacket[0] = (byte) (0xD0 | ((byte)portNumber));
@@ -166,7 +162,7 @@ public class DigitalRead extends AndroidNonvisibleComponent implements Bluetooth
 
 	public int Init() {
 		byte[] USBCommandPacket = new byte[5];
-		int pin = Variant.Remap(Pin) - 1;
+		int pin = Variant.Remap(Pin);
 		int portNumber = Variant.GetPortNumber(pin);
 		int initPinValue = Variant.GetInitPinValue(pin,1);
 		USBCommandPacket[0] = (byte) (0xD0 | ((byte)portNumber));

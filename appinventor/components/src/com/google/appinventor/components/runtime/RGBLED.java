@@ -65,11 +65,12 @@ import java.util.Queue;
     nonVisible = true,
     iconName = "images/hippoadk.png")
 @SimpleObject
-public class RGBLED extends AndroidNonvisibleComponent  {
+public class RGBLED extends AndroidNonvisibleComponent implements BluetoothConnectionListener {
   private static final int TOY_ROBOT = 0x0804; // from android.bluetooth.BluetoothClass.Device.
   
   protected UsbAccessory usbaccessory;
-  private String TAG = "AnalogWrite";
+  protected BluetoothClient bluetooth;
+  private String TAG = "RGBLED";
   private String GreenPin = "";
   private String BluePin = "";
   private String RedPin = "";
@@ -140,35 +141,50 @@ public class RGBLED extends AndroidNonvisibleComponent  {
   
 	@SimpleFunction(description = "GreenPinWrite")
 	public void GreenPinWrite(int value) {
-		byte[] USBCommandPacket = new byte[13];
-		USBCommandPacket[0] = 0x06;
-		USBCommandPacket[4] = 0x08;
-		int temp = Variant.Remap(GreenPin);
-		USBCommandPacket[5] = (byte) temp;
-		USBCommandPacket[6] = (byte) value;
-		usbaccessory.SendCommand(USBCommandPacket);
+		byte[] USBCommandPacket = new byte[5];
+		int analogWriteChanel = Variant.GetAnalogWriteChanel(GreenPin);
+		//int pinValue = Variant.GetPinValue(portNumber,value);
+		USBCommandPacket[0] = (byte) (0xE0 | ((byte)analogWriteChanel));
+		USBCommandPacket[1] = (byte) (value & 0X7F);
+		USBCommandPacket[2]	= (byte) (value >> 7);
+		if (usbaccessory != null) {
+			usbaccessory.SendCommand(USBCommandPacket);
+		}
+	    if (bluetooth != null) {
+	    	bluetooth.write("ss",USBCommandPacket);
+	    }
 	}
   
 	@SimpleFunction(description = "BluePinWrite")
 	public void BluePinWrite(int value) {
-		byte[] USBCommandPacket = new byte[13];
-		USBCommandPacket[0] = 0x06;
-		USBCommandPacket[4] = 0x08;
-		int temp = Variant.Remap(BluePin);
-		USBCommandPacket[5] = (byte) temp;
-		USBCommandPacket[6] = (byte) value;
-		usbaccessory.SendCommand(USBCommandPacket);
+		byte[] USBCommandPacket = new byte[5];
+		int analogWriteChanel = Variant.GetAnalogWriteChanel(BluePin);
+		//int pinValue = Variant.GetPinValue(portNumber,value);
+		USBCommandPacket[0] = (byte) (0xE0 | ((byte)analogWriteChanel));
+		USBCommandPacket[1] = (byte) (value & 0X7F);
+		USBCommandPacket[2]	= (byte) (value >> 7);
+		if (usbaccessory != null) {
+			usbaccessory.SendCommand(USBCommandPacket);
+		}
+	    //if (bluetooth != null) {
+	    //	bluetooth.write("ss",USBCommandPacket);
+	    //}
 	}
 	
 	@SimpleFunction(description = "RedPinWrite")
 	public void RedPinWrite(int value) {
-		byte[] USBCommandPacket = new byte[13];
-		USBCommandPacket[0] = 0x06;
-		USBCommandPacket[4] = 0x08;
-		int temp = Variant.Remap(RedPin);
-		USBCommandPacket[5] = (byte) temp;
-		USBCommandPacket[6] = (byte) value;
-		usbaccessory.SendCommand(USBCommandPacket);
+		byte[] USBCommandPacket = new byte[5];
+		int analogWriteChanel = Variant.GetAnalogWriteChanel(RedPin);
+		//int pinValue = Variant.GetPinValue(portNumber,value);
+		USBCommandPacket[0] = (byte) (0xE0 | ((byte)analogWriteChanel));
+		USBCommandPacket[1] = (byte) (value & 0X7F);
+		USBCommandPacket[2]	= (byte) (value >> 7);
+		if (usbaccessory != null) {
+			usbaccessory.SendCommand(USBCommandPacket);
+		}
+	    //if (bluetooth != null) {
+	    //	bluetooth.write("ss",USBCommandPacket);
+	    //}
 	}
   /**
    * Specifies the BluetoothClient component that should be used for communication.
@@ -182,5 +198,40 @@ public class RGBLED extends AndroidNonvisibleComponent  {
     	//usbaccessory.attachComponent(this, Collections.singleton(TOY_ROBOT));
     }
   }
+
+  /**
+   * Specifies the BluetoothClient component that should be used for communication.
+   */
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_BLUETOOTHCLIENT,
+      defaultValue = "")
+  @SimpleProperty(userVisible = false)
+  public void BluetoothClient(BluetoothClient bluetoothClient) {
+  //  if (bluetooth != null) {
+  //    bluetooth.removeBluetoothConnectionListener(this);
+  //    bluetooth.detachComponent(this);
+  //    bluetooth = null;
+   // }
+
+    if (bluetoothClient != null) {
+      bluetooth = bluetoothClient;
+      //bluetooth.attachComponent(this, Collections.singleton(TOY_ROBOT));
+      bluetooth.addBluetoothConnectionListener(this);
+      if (bluetooth.IsConnected()) {
+         //We missed the real afterConnect event.
+        afterConnect(bluetooth);
+      }
+    }
+  }
   
+  @Override
+  public void afterConnect(BluetoothConnectionBase bluetoothConnection) {
+  	// TODO Auto-generated method stub
+  	
+  }
+
+  @Override
+  public void beforeDisconnect(BluetoothConnectionBase bluetoothConnection) {
+  	// TODO Auto-generated method stub
+  	
+  }  
 }

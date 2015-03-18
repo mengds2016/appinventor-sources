@@ -237,34 +237,36 @@ public class Variant{
 	public static int GetAnalogWriteChanel(String pin)		
 	{
 		int analogWriteChanel = 0;
-		if(pin.equals(C12)){
+		if(pin.equals(A8)){
 			analogWriteChanel = 0;
-		}else if(pin.equals(D2)){
+		}else if(pin.equals(C8)){
 			analogWriteChanel = 1;
-		}else if(pin.equals(B5)){
+		}else if(pin.equals(C9)){
 			analogWriteChanel = 2;
 		}else if(pin.equals(B6)){
 			analogWriteChanel = 3;
-		}else if(pin.equals(C7)){
+		}else if(pin.equals(B7)){
 			analogWriteChanel = 4;
-		}else if(pin.equals(C6)){
+		}else if(pin.equals(B8)){
 			analogWriteChanel = 5;
-		}else if(pin.equals(B15)){
+		}else if(pin.equals(B9)){
 			analogWriteChanel = 6;
-		}else if(pin.equals(B14)){
+		}else if(pin.equals(C7)){
 			analogWriteChanel = 7;
-		}else if(pin.equals(B11)){
+		}else if(pin.equals(C6)){
 			analogWriteChanel = 8;
-		}else if(pin.equals(B10)){
+		}else if(pin.equals(B15)){
 			analogWriteChanel = 9;
-		}else if(pin.equals(B1)){
+		}else if(pin.equals(B14)){
 			analogWriteChanel = 10;
-		}else if(pin.equals(B0)){
+		}else if(pin.equals(B11)){
 			analogWriteChanel = 11;
-		}else if(pin.equals(A3)){
+		}else if(pin.equals(B10)){
 			analogWriteChanel = 12;
-		}else if(pin.equals(A2)){
+		}else if(pin.equals(B1)){
 			analogWriteChanel = 13;
+		}else if(pin.equals(B0)){
+			analogWriteChanel = 14;
 		}
 		return analogWriteChanel;
 	}
@@ -305,87 +307,85 @@ public class Variant{
 	}
 	public static int Remap(String pin)		
 	{
-		int i = 0;
+		int i = -1;
 		if(pin.equals(A8)){
-			i = 4;
-		}else if(pin.equals(C8)){
-			i = 5;
-		}else if(pin.equals(C9)){
-			i = 6;
-		}else if(pin.equals(C10)){
-			i = 7;
-		}else if(pin.equals(C11)){
-			i = 8;
-		}else if(pin.equals(C12)){
-			i = 9;
-		}else if(pin.equals(D2)){
-			i = 10;
-		}else if(pin.equals(B5)){
-			i = 11;
-		}else if(pin.equals(B6)){
-			i = 12;
-		}else if(pin.equals(B7)){
-			i = 13;
-		}else if(pin.equals(B8)){
-			i = 14;
-		}else if(pin.equals(B9)){
-			i = 15;
-		}else if(pin.equals(C0)){
-			i = 16;
-		}else if(pin.equals(C1)){
-			i = 17;
-		}else if(pin.equals(C2)){
-			i = 18;
-		}else if(pin.equals(C3)){
-			i = 19;
-		}else if(pin.equals(C7)){
-			i = 23;
-		}else if(pin.equals(C6)){
-			i = 24;
-		}else if(pin.equals(B15)){
-			i = 25;
-		}else if(pin.equals(B14)){
-			i = 26;
-		}else if(pin.equals(B13)){
-			i = 27;
-		}else if(pin.equals(B12)){
-			i = 28;
-		}else if(pin.equals(B11)){
-			i = 29;
-		}else if(pin.equals(B10)){
-			i = 30;
-		}else if(pin.equals(B1)){
-			i = 31;
-		}else if(pin.equals(B0)){
-			i = 32;
-		}else if(pin.equals(A7)){
-			i = 33;
-		}else if(pin.equals(A6)){
-			i = 34;
-		}else if(pin.equals(A5)){
-			i = 35;
-		}else if(pin.equals(A4)){
-			i = 36;
-		}else if(pin.equals(A3)){
-			i = 37;
-		}else if(pin.equals(A2)){
-			i = 38;
-		}else if(pin.equals(A1)){
-			i = 39;
-		}else if(pin.equals(A0)){
-			i = 40;
-		}else if(pin.equals(RED)){
-			i = 41;
-		}else if(pin.equals(GREEN)){
-			i = 42;
-		}else if(pin.equals(A)){
-			i = 1;
-		}else if(pin.equals(B)){
-			i = 2;
-		}else if(pin.equals(C)){
 			i = 3;
-		}else{
+		}else if(pin.equals(C8)){
+			i = 4;
+		}else if(pin.equals(C9)){
+			i = 5;
+		}else if(pin.equals(C10)){
+			i = 6;
+		}else if(pin.equals(C11)){
+			i = 7;
+		}else if(pin.equals(C12)){
+			i = 8;
+		}else if(pin.equals(D2)){
+			i = 9;
+		}else if(pin.equals(B5)){
+			i = 10;
+		}else if(pin.equals(B6)){
+			i = 11;
+		}else if(pin.equals(B7)){
+			i = 12;
+		}else if(pin.equals(B8)){
+			i = 13;
+		}else if(pin.equals(B9)){
+			i = 14;
+		}else if(pin.equals(C0)){
+			i = 15;
+		}else if(pin.equals(C1)){
+			i = 16;
+		}else if(pin.equals(C2)){
+			i = 17;
+		}else if(pin.equals(C3)){
+			i = 18;
+		}else if(pin.equals(C7)){
+			i = 22;
+		}else if(pin.equals(C6)){
+			i = 23;
+		}else if(pin.equals(B15)){
+			i = 24;
+		}else if(pin.equals(B14)){
+			i = 25;
+		}else if(pin.equals(B13)){
+			i = 26;
+		}else if(pin.equals(B12)){
+			i = 27;
+		}else if(pin.equals(B11)){
+			i = 28;
+		}else if(pin.equals(B10)){
+			i = 29;
+		}else if(pin.equals(B1)){
+			i = 30;
+		}else if(pin.equals(B0)){
+			i = 31;
+		}else if(pin.equals(A7)){
+			i = 32;
+		}else if(pin.equals(A6)){
+			i = 33;
+		}else if(pin.equals(A5)){
+			i = 34;
+		}else if(pin.equals(A4)){
+			i = 35;
+		}else if(pin.equals(A3)){
+			i = 36;
+		}else if(pin.equals(A2)){
+			i = 37;
+		}else if(pin.equals(A1)){
+			i = 38;
+		}else if(pin.equals(A0)){
+			i = 49;
+		}else if(pin.equals(RED)){
+			i = 40;
+		}else if(pin.equals(GREEN)){
+			i = 41;
+		}else if(pin.equals(A)){
 			i = 0;
+		}else if(pin.equals(B)){
+			i = 1;
+		}else if(pin.equals(C)){
+			i = 2;
 		}
 		return i;
 	}

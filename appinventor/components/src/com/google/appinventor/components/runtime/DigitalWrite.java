@@ -108,7 +108,7 @@ public class DigitalWrite extends AndroidNonvisibleComponent implements Bluetoot
 	@SimpleFunction(description = "DigitalWrite")
 	public void DigitalWrite(int value) {
 		byte[] USBCommandPacket = new byte[5];
-		int pin = Variant.Remap(Pin) - 1;
+		int pin = Variant.Remap(Pin);
 		int portNumber = Variant.GetPortNumber(pin);
 		int pinValue = Variant.GetPinValue(pin,value);
 		USBCommandPacket[0] = (byte) (0x90 | ((byte)portNumber));
@@ -120,10 +120,6 @@ public class DigitalWrite extends AndroidNonvisibleComponent implements Bluetoot
 	    if (bluetooth != null) {
 	    	bluetooth.write("ss",USBCommandPacket);
 	    }
-		Log.d(TAG,"pinValue = " + pinValue);
-		Log.d(TAG,"USBCommandPacket[0] = " + (int)USBCommandPacket[0]);
-		Log.d(TAG,"USBCommandPacket[1] = " + (int)USBCommandPacket[1]);
-		Log.d(TAG,"USBCommandPacket[2] = " + (int)USBCommandPacket[2]);
 		Variant.SetDigitalOutputValue(portNumber,pinValue);
 	}
   

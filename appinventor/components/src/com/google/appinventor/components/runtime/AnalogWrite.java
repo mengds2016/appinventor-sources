@@ -117,9 +117,6 @@ public class AnalogWrite extends AndroidNonvisibleComponent implements Bluetooth
 	    if (bluetooth != null) {
 	    	bluetooth.write("ss",USBCommandPacket);
 	    }
-		Log.d(TAG,"USBCommandPacket[0] = " + (int)USBCommandPacket[0]);
-		Log.d(TAG,"USBCommandPacket[1] = " + (int)USBCommandPacket[1]);
-		Log.d(TAG,"USBCommandPacket[2] = " + (int)USBCommandPacket[2]);
 	}
   
   /**
