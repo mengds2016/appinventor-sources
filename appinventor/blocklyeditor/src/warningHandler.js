@@ -403,7 +403,7 @@ Blockly.WarningHandler.checkDuplicateErrorHandler = function(params){
 //Blockly.WarningHandler.singletonComponentTypes =
 //    [// Storage
 //     "TinyDB",
-//     // Sensors
+//     // Sensorsa
 //     "AccelerometerSensor",
 //     "BarcodeSensor",
 //     "LocationSensor",

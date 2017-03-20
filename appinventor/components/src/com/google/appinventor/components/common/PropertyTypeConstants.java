@@ -26,6 +26,8 @@ public class PropertyTypeConstants {
    * in the current project.
    */
   public static final String PROPERTY_TYPE_BLUETOOTHCLIENT = "BluetoothClient";
+  
+  public static final String PROPERTY_TYPE_UsbAccessory = "UsbAccessory";
 
   /**
    * Boolean values.

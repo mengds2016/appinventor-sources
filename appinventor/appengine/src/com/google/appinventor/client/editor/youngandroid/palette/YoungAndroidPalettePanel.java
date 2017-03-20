@@ -156,6 +156,72 @@ public class YoungAndroidPalettePanel extends Composite implements SimplePalette
             dropTargetProvider);
       simplePaletteItems.put(componentTypeName, item);
       addPaletteItem(item, category);
+
+  private PropertyEditor createPropertyEditor(String editorType) {
+    if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_HORIZONTAL_ALIGNMENT)) {
+      return new YoungAndroidHorizontalAlignmentChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_VERTICAL_ALIGNMENT)) {
+        return new YoungAndroidVerticalAlignmentChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_ASSET)) {
+      return new YoungAndroidAssetSelectorPropertyEditor(editor);
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_BLUETOOTHCLIENT)) {
+      return new YoungAndroidComponentSelectorPropertyEditor(editor,
+          // Pass the set of component types that will be shown in the property editor,
+          // in this case, just "BluetoothClient".
+          Collections.singleton("BluetoothClient"));
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_UsbAccessory)) {
+        return new YoungAndroidComponentSelectorPropertyEditor(editor,
+                // Pass the set of component types that will be shown in the property editor,
+                // in this case, just "BluetoothClient".
+                Collections.singleton("UsbAccessory"));
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN)) {
+      return new YoungAndroidBooleanPropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_BUTTON_SHAPE)) {
+      return new YoungAndroidButtonShapeChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_COLOR)) {
+      return new YoungAndroidColorChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_COMPONENT)) {
+      return new YoungAndroidComponentSelectorPropertyEditor(editor);
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_FLOAT)) {
+      return new FloatPropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_INTEGER)) {
+      return new IntegerPropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_LEGO_NXT_SENSOR_PORT)) {
+      return new YoungAndroidLegoNxtSensorPortChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_LEGO_NXT_GENERATED_COLOR)) {
+      return new YoungAndroidColorChoicePropertyEditor(
+          YoungAndroidColorChoicePropertyEditor.NXT_GENERATED_COLORS);
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_NON_NEGATIVE_FLOAT)) {
+      return new NonNegativeFloatPropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_NON_NEGATIVE_INTEGER)) {
+      return new NonNegativeIntegerPropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_SCREEN_ORIENTATION)) {
+      return new YoungAndroidScreenOrientationChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_SCREEN_ANIMATION)) {
+      return new YoungAndroidScreenAnimationChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_SENSOR_DIST_INTERVAL)) {
+      return new YoungAndroidSensorDistIntervalChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_SENSOR_TIME_INTERVAL)) {
+      return new YoungAndroidSensorTimeIntervalChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_STRING)) {
+      return new StringPropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_TEXTALIGNMENT)) {
+      return new YoungAndroidAlignmentChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_TEXTAREA)) {
+      return new TextAreaPropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_TOAST_LENGTH)) {
+      return new YoungAndroidToastLengthChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_TYPEFACE)) {
+      return new YoungAndroidFontTypefaceChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_VISIBILITY)) {
+      return new YoungAndroidVisibilityChoicePropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_TEXT_RECEIVING)) {
+      return new YoungAndroidTextReceivingPropertyEditor();
+    } else if (editorType.equals(PropertyTypeConstants.PROPERTY_TYPE_ACCELEROMETER_SENSITIVITY)) {
+      return new YoungAndroidAccelerometerSensitivityChoicePropertyEditor();
+    } else {
+      return new TextPropertyEditor();
+
     }
   }
 

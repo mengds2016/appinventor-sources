@@ -1,8 +1,7 @@
 // -*- mode: java; c-basic-offset: 2; -*-
 // Copyright 2009-2011 Google, All Rights reserved
 // Copyright 2011-2012 MIT, All rights reserved
-// Released under the Apache License, Version 2.0
-// http://www.apache.org/licenses/LICENSE-2.0
+// Released under the MIT License https://raw.github.com/mit-cml/app-inventor/master/mitlicense.txt
 
 
 package com.google.appinventor.components.runtime;
@@ -67,7 +66,7 @@ import java.util.Queue;
     nonVisible = true,
     iconName = "images/accelerometersensor.png")
 @SimpleObject
-public class AccelerometerSensor extends AndroidNonvisibleComponent
+public class SixAxisSensor extends AndroidNonvisibleComponent
     implements OnStopListener, OnResumeListener, SensorComponent, SensorEventListener, Deleteable {
 
   // Shake thresholds - derived by trial
@@ -85,6 +84,9 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
   private float xAccel;
   private float yAccel;
   private float zAccel;
+  private float angleAcceleration;
+  private float angleGyroscope;
+  private float angleKalmanFilter;
 
   private int accuracy;
 
@@ -103,13 +105,28 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
   private long timeLastShook;
 
   private Sensor accelerometerSensor;
+  private Sensor gyroscopeSensor;
+  
+  private static float Q_angle=0.005f, Q_gyro=0.003f, R_angle=0.5f, dt=0.010f;
+  private static float q_bias=0, angle_err, PCt_0, PCt_1, E, K_0, K_1, t_0, t_1;
+  private static float P[][] = { { 1, 0 }, { 0, 1 } };
+  private static float Pdot[] ={0,0,0,0};
+  private static char C_0 = 1;
+  
+  private float Sum_Measure_Gyroscope;
+  private float angle;
+  private float gyroscope;
+  private float Angle_Acceleration;
+  
+  private long Current_Time = 0, Early_Time = 0, Use_Time = 0;
+	
 
   /**
    * Creates a new AccelerometerSensor component.
    *
    * @param container  ignored (because this is a non-visible component)
    */
-  public AccelerometerSensor(ComponentContainer container) {
+  public SixAxisSensor(ComponentContainer container) {
     super(container.$form());
     form.registerForOnResume(this);
     form.registerForOnStop(this);
@@ -117,112 +134,43 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
     enabled = true;
     sensorManager = (SensorManager) container.$context().getSystemService(Context.SENSOR_SERVICE);
     accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+    gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
     startListening();
-    MinimumInterval(10);
-    Sensitivity(Component.ACCELEROMETER_SENSITIVITY_MODERATE);
-  }
-
-
-  /**
-   * Returns the minimum interval required between calls to Shaking(),
-   * in milliseconds.
-   * Once the phone starts being shaken, all further Shaking() calls will be ignored
-   * until the interval has elapsed.
-   * @return  minimum interval in ms
-   */
-  @SimpleProperty(
-      category = PropertyCategory.BEHAVIOR,
-      description = "The minimum interval, in milliseconds, between phone shakes")
-  public int MinimumInterval() {
-    return minimumInterval;
+    //MinimumInterval(10);
+    //Sensitivity(Component.ACCELEROMETER_SENSITIVITY_MODERATE);
   }
 
   /**
-   * Specifies the minimum interval required between calls to Shaking(),
-   * in milliseconds.
-   * Once the phone starts being shaken, all further Shaking() calls will be ignored
-   * until the interval has elapsed.
-   * @param interval  minimum interval in ms
-   */
-  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_NON_NEGATIVE_INTEGER,
-      defaultValue = "800") //Default value derived by trial of 12 people on 3 different devices
-  @SimpleProperty
-  public void MinimumInterval(int interval) {
-    minimumInterval = interval;
-  }
-
-  /**
-   * Returns a number that encodes how sensitive the AccelerometerSensor is.
-   * The choices are: 1 = weak, 2 = moderate, 3 = strong.
-   *
-   * @return  one of {@link Component#ACCELEROMETER_SENSITIVITY_WEAK},
-   *          {@link Component#ACCELEROMETER_SENSITIVITY_MODERATE} or
-   *          {@link Component#ACCELEROMETER_SENSITIVITY_STRONG}
-   */
-  @SimpleProperty(
-      category = PropertyCategory.APPEARANCE,
-      description = "A number that encodes how sensitive the accelerometer is. " +
-              "The choices are: 1 = weak, 2 = moderate, " +
-              " 3 = strong.")
-  public int Sensitivity() {
-    return sensitivity;
-  }
-
-  /**
-   * Specifies the sensitivity of the accelerometer
-   * and checks that the argument is a legal value.
-   *
-   * @param sensitivity one of {@link Component#ACCELEROMETER_SENSITIVITY_WEAK},
-   *          {@link Component#ACCELEROMETER_SENSITIVITY_MODERATE} or
-   *          {@link Component#ACCELEROMETER_SENSITIVITY_STRONG}
-   *
-   */
-  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_ACCELEROMETER_SENSITIVITY,
-      defaultValue = Component.ACCELEROMETER_SENSITIVITY_MODERATE + "")
-  @SimpleProperty
-  public void Sensitivity(int sensitivity) {
-    if ((sensitivity == 1) || (sensitivity == 2) || (sensitivity == 3)) {
-      this.sensitivity = sensitivity;
-    } else {
-      form.dispatchErrorOccurredEvent(this, "Sensitivity",
-          ErrorMessages.ERROR_BAD_VALUE_FOR_ACCELEROMETER_SENSITIVITY, sensitivity);
-    }
-  }
-
-  /**
-   * Indicates the acceleration changed in the X, Y, and/or Z dimensions.
+   * Indicates the angle measured from acceleration sensor. 
    */
   @SimpleEvent
-  public void AccelerationChanged(float xAccel, float yAccel, float zAccel) {
-    this.xAccel = xAccel;
-    this.yAccel = yAccel;
-    this.zAccel = zAccel;
-
-    addToSensorCache(X_CACHE, xAccel);
-    addToSensorCache(Y_CACHE, yAccel);
-    addToSensorCache(Z_CACHE, zAccel);
-
-    long currentTime = System.currentTimeMillis();
-
-    //Checks whether the phone is shaking and the minimum interval
-    //has elapsed since the last registered a shaking event.
-    if ((isShaking(X_CACHE, xAccel) || isShaking(Y_CACHE, yAccel) || isShaking(Z_CACHE, zAccel))
-        && (timeLastShook == 0 || currentTime >= timeLastShook + minimumInterval)){
-      timeLastShook = currentTime;
-      Shaking();
-    }
-
-    EventDispatcher.dispatchEvent(this, "AccelerationChanged", xAccel, yAccel, zAccel);
+  public void AngleAccelerationChanged(float angleAcceleration) {
+    this.angleAcceleration = angleAcceleration;
+    
+    EventDispatcher.dispatchEvent(this, "AngleAccelerationChanged", angleAcceleration);
   }
-
+  
   /**
-   * Indicates the device started being shaken or continues to be shaken.
+   * Indicates the angle measured from gyroscope sensor. 
    */
   @SimpleEvent
-  public void Shaking() {
-    EventDispatcher.dispatchEvent(this, "Shaking");
+  public void AngleGyroscopeChanged(float angleGyroscope) {
+    this.angleGyroscope = angleGyroscope;
+    
+    EventDispatcher.dispatchEvent(this, "AngleGyroscopeChanged", angleGyroscope);
   }
-
+  
+  /**
+   * Indicates the angle measured from kalman filter. 
+   */
+  @SimpleEvent
+  public void AngleKalmanFilterChanged(float angle, float gyroscope) {
+    this.angle = angle;
+    this.gyroscope = gyroscope;
+    
+    EventDispatcher.dispatchEvent(this, "AngleKalmanFilterChanged", angle, gyroscope);
+  }
+  
   /**
    * Available property getter method (read-only property).
    *
@@ -252,7 +200,8 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
   // Assumes that sensorManager has been initialized, which happens in constructor
   private void startListening() {
     //sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
-    sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
+    sensorManager.registerListener(this, accelerometerSensor, 20000);
+    sensorManager.registerListener(this, gyroscopeSensor, 10000);
   }
 
   // Assumes that sensorManager has been initialized, which happens in constructor
@@ -291,34 +240,46 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
    */
   @SimpleProperty(
       category = PropertyCategory.BEHAVIOR)
-  public float XAccel() {
-    return xAccel;
+  public float AngleAcceleration() {
+    return angleAcceleration;
   }
 
   /**
-   * Returns the acceleration in the Y-dimension in SI units (m/s^2).
+   * Returns the acceleration in the X-dimension in SI units (m/s^2).
    * The sensor must be enabled to return meaningful values.
    *
-   * @return  Y acceleration
+   * @return  X acceleration
    */
   @SimpleProperty(
       category = PropertyCategory.BEHAVIOR)
-  public float YAccel() {
-    return yAccel;
+  public float AngleGyroscope() {
+    return angleGyroscope;
   }
-
+  
   /**
-   * Returns the acceleration in the Z-dimension in SI units (m/s^2).
+   * Returns the acceleration in the X-dimension in SI units (m/s^2).
    * The sensor must be enabled to return meaningful values.
    *
-   * @return  Z acceleration
+   * @return  X acceleration
    */
   @SimpleProperty(
       category = PropertyCategory.BEHAVIOR)
-  public float ZAccel() {
-    return zAccel;
+  public float Angle() {
+    return angle;
   }
-
+  
+  /**
+   * Returns the acceleration in the X-dimension in SI units (m/s^2).
+   * The sensor must be enabled to return meaningful values.
+   *
+   * @return  X acceleration
+   */
+  @SimpleProperty(
+      category = PropertyCategory.BEHAVIOR)
+  public float Gyroscope() {
+    return gyroscope;
+  }
+  
   /*
    * Updating sensor cache, replacing oldest values.
    */
@@ -329,40 +290,36 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
     cache.add(value);
   }
 
-  /*
-   * Indicates whether there was a sudden, unusual movement.
-   */
-  // TODO(user): Maybe this can be improved.
-  // See http://www.utdallas.edu/~rxb023100/pubs/Accelerometer_WBSN.pdf.
-  private boolean isShaking(Queue<Float> cache, float currentValue) {
-    float average = 0;
-    for (float value : cache) {
-      average += value;
-    }
-
-    average /= cache.size();
-
-    if (Sensitivity() == 1) { //sensitivity is weak
-      return Math.abs(average - currentValue) > strongShakeThreshold;
-    } else if (Sensitivity() == 2) { //sensitivity is moderate
-      return ((Math.abs(average - currentValue) > moderateShakeThreshold)
-        && (Math.abs(average - currentValue) < strongShakeThreshold));
-    } else { //sensitivity is strong
-      return ((Math.abs(average - currentValue) > weakShakeThreshold)
-        && (Math.abs(average - currentValue) < moderateShakeThreshold));
-    }
-  }
-
   // SensorListener implementation
   @Override
-  public void onSensorChanged(SensorEvent sensorEvent) {
+  public void onSensorChanged(SensorEvent event) {
     if (enabled) {
-      final float[] values = sensorEvent.values;
-      xAccel = values[0];
-      yAccel = values[1];
-      zAccel = values[2];
-      accuracy = sensorEvent.accuracy;
-      AccelerationChanged(xAccel, yAccel, zAccel);
+    	if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+			Angle_Acceleration =  Angle_Acceleration_X(
+					event.values[SensorManager.DATA_Z],
+					event.values[SensorManager.DATA_Y]) - 90;
+			AngleAccelerationChanged(Angle_Acceleration);
+		}else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+        	Current_Time=event.timestamp;
+        	Current_Time= System.currentTimeMillis();
+        	if(Early_Time==0)
+        		Use_Time=0;
+        	else
+        		Use_Time=(Current_Time-Early_Time);
+			Early_Time=Current_Time;
+			//dt = (float)Use_Time *(1.0f / 1000.0f);
+			float Measure_Gyroscope = 57.3f * (event.values[SensorManager.DATA_X]);
+			//float Measure_Gyroscope = -1*57.3f * (event.values[SensorManager.DATA_Y]);
+			Sum_Measure_Gyroscope += Measure_Gyroscope * dt;
+			AngleGyroscopeChanged(Sum_Measure_Gyroscope);
+			Kalman_Filter(Angle_Acceleration,Measure_Gyroscope);
+		}
+      //final float[] values = event.values;
+      //xAccel = values[0];
+      //yAccel = values[1];
+      //zAccel = values[2];
+      //accuracy = event.accuracy;
+      //AccelerationChanged(xAccel, yAccel, zAccel);
     }
   }
 
@@ -397,4 +354,50 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
       stopListening();
     }
   }
+	
+	public void Kalman_Filter(float angleaccelerometer,float anglegyroscope)		
+	{
+		angle += (anglegyroscope - q_bias) * dt;
+		Pdot[0] = Q_angle - P[0][1] - P[1][0];
+		Pdot[1] = -P[1][1];
+		Pdot[2] = -P[1][1];
+		Pdot[3] = Q_gyro;
+
+		P[0][0] += Pdot[0] * dt;
+		P[0][1] += Pdot[1] * dt;
+		P[1][0] += Pdot[2] * dt;
+		P[1][1] += Pdot[3] * dt;
+
+		angle_err = angleaccelerometer - angle;
+
+		PCt_0 = C_0 * P[0][0];
+		PCt_1 = C_0 * P[1][0];
+
+		E = R_angle + C_0 * PCt_0;
+
+		K_0 = PCt_0 / E;
+		K_1 = PCt_1 / E;
+
+		t_0 = PCt_0;
+		t_1 = C_0 * P[0][1];
+
+		P[0][0] -= K_0 * t_0;
+		P[0][1] -= K_0 * t_1;
+		P[1][0] -= K_1 * t_0;
+		P[1][1] -= K_1 * t_1;
+
+		angle += K_0 * angle_err;
+		q_bias += K_1 * angle_err;
+		gyroscope = anglegyroscope - q_bias;
+		AngleKalmanFilterChanged(angle,gyroscope);
+	}
+	
+	public float Angle_Acceleration_X(float y,float z)		
+	{
+		float g = (float)Math.sqrt(z * z + y*y );//竖放
+		float cos = y / g;//竖放
+		float AccelerometerAngle = (float) Math.acos(cos) * 57.3f;// 横放
+		return AccelerometerAngle;
+	}
+	
 }

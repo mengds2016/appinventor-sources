@@ -12,6 +12,7 @@ import java.util.Map;
 /**
  * Categories for grouping components in the palette within the Designer.
  */
+
 //public enum ComponentCategory {
 //  // TODO(user): i18n category names
 //  USERINTERFACE(MESSAGES.UIComponentPallette()),
@@ -55,6 +56,7 @@ import java.util.Map;
     SOCIAL("Social"),
     STORAGE("Storage"),
     CONNECTIVITY("Connectivity"),
+	HIPPOADK("HippoADK"),
     LEGOMINDSTORMS("LEGO\u00AE MINDSTORMS\u00AE"),
     EXPERIMENTAL("Experimental"),
     EXTENSION("Extension"),
@@ -75,10 +77,12 @@ import java.util.Map;
       DOC_MAP.put("Social", "social");
       DOC_MAP.put("Storage", "storage");
       DOC_MAP.put("Connectivity", "connectivity");
+	  DOC_MAP.put("HippoADK", "hippoadk");
       DOC_MAP.put("LEGO\u00AE MINDSTORMS\u00AE", "legomindstorms");
       DOC_MAP.put("Experimental", "experimental");
       DOC_MAP.put("Extension", "extension");
     }
+
 
 
     private String name;

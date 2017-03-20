@@ -1,8 +1,7 @@
 // -*- mode: java; c-basic-offset: 2; -*-
 // Copyright 2009-2011 Google, All Rights reserved
 // Copyright 2011-2012 MIT, All rights reserved
-// Released under the Apache License, Version 2.0
-// http://www.apache.org/licenses/LICENSE-2.0
+// Released under the MIT License https://raw.github.com/mit-cml/app-inventor/master/mitlicense.txt
 
 
 package com.google.appinventor.components.runtime;
@@ -63,11 +62,11 @@ import java.util.Queue;
     "     0 when perpindicular to the ground, and +9.8 when facing down.  " +
     "     The value can also be affected by accelerating it with or against " +
     "     gravity. </li></ul>",
-    category = ComponentCategory.SENSORS,
+    category = ComponentCategory.HIPPOADK,
     nonVisible = true,
-    iconName = "images/accelerometersensor.png")
+    iconName = "images/hippoadk.png")
 @SimpleObject
-public class AccelerometerSensor extends AndroidNonvisibleComponent
+public class MPU6050 extends AndroidNonvisibleComponent
     implements OnStopListener, OnResumeListener, SensorComponent, SensorEventListener, Deleteable {
 
   // Shake thresholds - derived by trial
@@ -109,7 +108,7 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
    *
    * @param container  ignored (because this is a non-visible component)
    */
-  public AccelerometerSensor(ComponentContainer container) {
+  public MPU6050(ComponentContainer container) {
     super(container.$form());
     form.registerForOnResume(this);
     form.registerForOnStop(this);
@@ -132,7 +131,7 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
    */
   @SimpleProperty(
       category = PropertyCategory.BEHAVIOR,
-      description = "The minimum interval, in milliseconds, between phone shakes")
+      description = "The minimum interval between phone shakes")
   public int MinimumInterval() {
     return minimumInterval;
   }
@@ -252,7 +251,7 @@ public class AccelerometerSensor extends AndroidNonvisibleComponent
   // Assumes that sensorManager has been initialized, which happens in constructor
   private void startListening() {
     //sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
-    sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
+    sensorManager.registerListener(this, accelerometerSensor, 20000);
   }
 
   // Assumes that sensorManager has been initialized, which happens in constructor
